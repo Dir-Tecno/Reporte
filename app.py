@@ -70,21 +70,28 @@ if not df.empty:
     # Filtrar el DataFrame según las selecciones
     df = df[df['N_LOCALIDAD'].isin(localidades) & df['N_DEPARTAMENTO'].isin(departamentos)]
 
-    # Convertir las fechas en el DataFrame a un formato estándar
-    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%m/%d/%Y %H:%M:%S')
+    # Asegúrate de convertir las fechas a un formato estándar
+df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%m/%d/%Y %H:%M:%S')
 
-    if 'FEC_INSCRIPCION' in df.columns:
-        fecha_min = df['FEC_INSCRIPCION'].min()
-        fecha_max = df['FEC_INSCRIPCION'].max()
-        st.write("Fecha mínima:", fecha_min)
-        st.write("Fecha máxima:", fecha_max)
-        fecha_range = st.slider(
+if 'FEC_INSCRIPCION' in df.columns:
+    # Obtener la fecha mínima y máxima
+    fecha_min = df['FEC_INSCRIPCION'].min()
+    fecha_max = df['FEC_INSCRIPCION'].max()
+    
+    # Verificar las fechas mínimas y máximas
+    st.write("Fecha mínima:", fecha_min)
+    st.write("Fecha máxima:", fecha_max)
+    
+    # Crear el slider para seleccionar el rango de fechas
+    fecha_range = st.slider(
         "Selecciona el rango de fechas",
         min_value=fecha_min,
         max_value=fecha_max,
         value=(fecha_min, fecha_max),
-        format="YYYY-MM-DD"  # Formato de fecha para el control deslizante
+        format="YYYY-MM-DD"  # Asegúrate de que el formato sea compatible
     )
+    
+    # Filtrar los datos según el rango de fechas seleccionado
     df = df[(df['FEC_INSCRIPCION'] >= fecha_range[0]) & (df['FEC_INSCRIPCION'] <= fecha_range[1])]
 
 
