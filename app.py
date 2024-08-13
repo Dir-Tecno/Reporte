@@ -61,18 +61,25 @@ if 'FEC_INSCRIPCION' in df.columns:
     fecha_min = df['FEC_INSCRIPCION'].min()
     fecha_max = df['FEC_INSCRIPCION'].max()
 
+    # Convertir fechas a timestamps para el slider
+    fecha_min_timestamp = fecha_min.timestamp()
+    fecha_max_timestamp = fecha_max.timestamp()
+
     # Imprimir las fechas mínimas y máximas para depuración
     st.write("Fecha mínima:", fecha_min)
     st.write("Fecha máxima:", fecha_max)
     
-    # Crear el slider para seleccionar el rango de fechas
-    fecha_range = st.slider(
+    # Crear el slider para seleccionar el rango de fechas usando timestamps
+    fecha_range_timestamp = st.slider(
         "Selecciona el rango de fechas",
-        min_value=fecha_min,
-        max_value=fecha_max,
-        value=(fecha_min, fecha_max),
-        format="YYYY-MM-DD"  # El formato para mostrar las fechas
+        min_value=fecha_min_timestamp,
+        max_value=fecha_max_timestamp,
+        value=(fecha_min_timestamp, fecha_max_timestamp),
+        format="YYYY-MM-DD"  # Este formato no se usa en el slider, solo para mostrar
     )
+    
+    # Convertir el rango seleccionado de vuelta a fechas
+    fecha_range = [pd.to_datetime(timestamp, unit='s') for timestamp in fecha_range_timestamp]
     
     # Filtrar los datos según el rango de fechas seleccionado
     df = df[(df['FEC_INSCRIPCION'] >= fecha_range[0]) & (df['FEC_INSCRIPCION'] <= fecha_range[1])]
@@ -146,5 +153,3 @@ if 'FEC_INSCRIPCION' in df.columns:
 
 else:
     st.error("No se encontraron datos en el archivo CSV.")
-
-
