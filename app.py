@@ -136,5 +136,15 @@ if 'FEC_INSCRIPCION' in df.columns:
     # DNI por Localidad (Torta)
     if 'N_LOCALIDAD' in df.columns:
         dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
-        st.subheader("Conteo de ID Inscr
+        st.subheader("Conteo de ID Inscripción por Localidad (Torta)")
+        pie_chart_localidad = alt.Chart(dni_por_localidad).mark_arc().encode(
+            theta=alt.Theta(field="Conteo", type="quantitative"),
+            color=alt.Color(field='N_LOCALIDAD', type="nominal"),
+            tooltip=['N_LOCALIDAD', 'Conteo']
+        ).properties(width=600, height=400)
+        st.altair_chart(pie_chart_localidad, use_container_width=True)
+
+else:
+    st.error("No se encontraron datos en el archivo CSV.")
+
 
