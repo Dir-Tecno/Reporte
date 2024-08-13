@@ -20,7 +20,7 @@ def download_from_bucket(blob_name, bucket_name):
         return temp_file.name
 
 # Función para crear gráfico basado en selecciones del usuario
-def create_chart(df, x_column, y_column, chart_type):
+#def create_chart(df, x_column, y_column, chart_type):
     if chart_type == 'Bar':
         chart = alt.Chart(df).mark_bar().encode(
             x=alt.X(x_column, sort='-y'),
