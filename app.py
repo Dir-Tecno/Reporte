@@ -54,14 +54,21 @@ csv_file_path = download_from_bucket(blob_name, bucket_name)
 # Cargar los datos en un DataFrame
 df = pd.read_csv(csv_file_path)
 
+# Verifica las columnas en el DataFrame
+st.write("Columnas en el DataFrame:", df.columns)
+
 if not df.empty:
     # Coloca los filtros por encima del contenido principal
     st.header("Filtros")
     
     # Filtros de LOCALIDAD y DEPARTAMENTO
-    localidades = st.multiselect("Filtrar por Localidad", options=df['N_LOCALIDAD'].unique(), default=df['N_LOCALIDAD'].unique())
-    departamentos = st.multiselect("Filtrar por Departamento", options=df['N_DEPARTAMENTO'].unique(), default=df['N_DEPARTAMENTO'].unique())
-    
+    try:
+        localidades = st.multiselect("Filtrar por Localidad", options=df['N_LOCALIDAD'].unique(), default=df['N_LOCALIDAD'].unique())
+        departamentos = st.multiselect("Filtrar por Departamento", options=df['N_DEPARTAMENTO'].unique(), default=df['N_DEPARTAMENTO'].unique())
+    except KeyError as e:
+        st.error(f"Error al acceder a la columna: {e}")
+        st.stop()
+
     # Filtrar el DataFrame según las selecciones
     df = df[df['N_LOCALIDAD'].isin(localidades) & df['N_DEPARTAMENTO'].isin(departamentos)]
 
