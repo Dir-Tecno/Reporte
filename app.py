@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+from datetime import datetime
+import tempfile
 from google.cloud import storage
 from google.oauth2 import service_account
-import tempfile
 
 # Configura las credenciales de Google Cloud usando la variable de entorno
 credentials_info = st.secrets["GOOGLE_APPLICATION_CREDENTIALS_JSON"]
@@ -52,33 +53,15 @@ csv_file_path = download_from_bucket(blob_name, bucket_name)
 # Cargar los datos en un DataFrame
 df = pd.read_csv(csv_file_path)
 
-# Verifica las columnas en el DataFrame
-st.write("Columnas en el DataFrame:", df.columns)
-
-if not df.empty:
-    # Coloca los filtros por encima del contenido principal
-    st.header("Filtros")
-    
-    # Filtros de LOCALIDAD y DEPARTAMENTO
-    try:
-        localidades = st.multiselect("Filtrar por Localidad", options=df['N_LOCALIDAD'].unique(), default=df['N_LOCALIDAD'].unique())
-        departamentos = st.multiselect("Filtrar por Departamento", options=df['N_DEPARTAMENTO'].unique(), default=df['N_DEPARTAMENTO'].unique())
-    except KeyError as e:
-        st.error(f"Error al acceder a la columna: {e}")
-        st.stop()
-
-    # Filtrar el DataFrame según las selecciones
-    df = df[df['N_LOCALIDAD'].isin(localidades) & df['N_DEPARTAMENTO'].isin(departamentos)]
-
-    # Asegúrate de convertir las fechas a un formato estándar
+# Convertir las fechas en el DataFrame a un formato estándar
 df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%m/%d/%Y %H:%M:%S')
 
 if 'FEC_INSCRIPCION' in df.columns:
     # Obtener la fecha mínima y máxima
     fecha_min = df['FEC_INSCRIPCION'].min()
     fecha_max = df['FEC_INSCRIPCION'].max()
-    
-    # Verificar las fechas mínimas y máximas
+
+    # Imprimir las fechas mínimas y máximas para depuración
     st.write("Fecha mínima:", fecha_min)
     st.write("Fecha máxima:", fecha_max)
     
@@ -88,12 +71,11 @@ if 'FEC_INSCRIPCION' in df.columns:
         min_value=fecha_min,
         max_value=fecha_max,
         value=(fecha_min, fecha_max),
-        format="YYYY-MM-DD"  # Asegúrate de que el formato sea compatible
+        format="YYYY-MM-DD"  # El formato para mostrar las fechas
     )
     
     # Filtrar los datos según el rango de fechas seleccionado
     df = df[(df['FEC_INSCRIPCION'] >= fecha_range[0]) & (df['FEC_INSCRIPCION'] <= fecha_range[1])]
-
 
     # Selección de campos para el gráfico
     x_column = st.selectbox("Selecciona el campo para el eje X", df.columns)
@@ -154,13 +136,5 @@ if 'FEC_INSCRIPCION' in df.columns:
     # DNI por Localidad (Torta)
     if 'N_LOCALIDAD' in df.columns:
         dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
-        st.subheader("Conteo de ID Inscripción por Localidad (Torta)")
-        pie_chart_localidad = alt.Chart(dni_por_localidad).mark_arc().encode(
-            theta=alt.Theta(field="Conteo", type="quantitative"),
-            color=alt.Color(field='N_LOCALIDAD', type="nominal"),
-            tooltip=['N_LOCALIDAD', 'Conteo']
-        ).properties(width=600, height=400)
-        st.altair_chart(pie_chart_localidad, use_container_width=True)
+        st.subheader("Conteo de ID Inscr
 
-else:
-    st.error("No se encontraron datos en el archivo CSV.")
