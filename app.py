@@ -44,7 +44,7 @@ def create_chart(df, x_column, y_column, chart_type):
         )
     return chart.properties(width=600, height=400)
 
-st.title("Reporte Escrituración 2024")
+st.title("Reporte 2024")
 
 # Descargar datos desde el bucket de Google Cloud
 bucket_name = "direccion"
@@ -59,18 +59,18 @@ if not df.empty:
     st.header("Filtros")
     
     # Filtros de LOCALIDAD y DEPARTAMENTO
-    localidades = st.multiselect("Filtrar por Localidad", options=df['LOCALIDAD'].unique(), default=df['LOCALIDAD'].unique())
-    departamentos = st.multiselect("Filtrar por Departamento", options=df['DEPARTAMENTO'].unique(), default=df['DEPARTAMENTO'].unique())
+    localidades = st.multiselect("Filtrar por Localidad", options=df['N_LOCALIDAD'].unique(), default=df['N_LOCALIDAD'].unique())
+    departamentos = st.multiselect("Filtrar por Departamento", options=df['N_DEPARTAMENTO'].unique(), default=df['N_DEPARTAMENTO'].unique())
     
     # Filtrar el DataFrame según las selecciones
-    df = df[df['LOCALIDAD'].isin(localidades) & df['DEPARTAMENTO'].isin(departamentos)]
+    df = df[df['N_LOCALIDAD'].isin(localidades) & df['N_DEPARTAMENTO'].isin(departamentos)]
 
     # Filtro de fecha con control deslizante
-    if 'fecha' in df.columns:
-        fecha_min = pd.to_datetime(df['fecha'].min())
-        fecha_max = pd.to_datetime(df['fecha'].max())
+    if 'FEC_INSCRIPCION' in df.columns:
+        fecha_min = pd.to_datetime(df['FEC_INSCRIPCION'].min())
+        fecha_max = pd.to_datetime(df['FEC_INSCRIPCION'].max())
         fecha_range = st.slider("Selecciona el rango de fechas", min_value=fecha_min, max_value=fecha_max, value=(fecha_min, fecha_max))
-        df = df[(pd.to_datetime(df['fecha']) >= fecha_range[0]) & (pd.to_datetime(df['fecha']) <= fecha_range[1])]
+        df = df[(pd.to_datetime(df['FEC_INSCRIPCION']) >= fecha_range[0]) & (pd.to_datetime(df['FEC_INSCRIPCION']) <= fecha_range[1])]
 
     # Selección de campos para el gráfico
     x_column = st.selectbox("Selecciona el campo para el eje X", df.columns)
@@ -95,49 +95,49 @@ if not df.empty:
     # Gráficos predefinidos
     st.header("Gráficos Predefinidos")
 
-    # DNI por Estado
-    if 'Estado (diario)' in df.columns:
-        dni_por_estado = df.groupby('Estado (diario)').size().reset_index(name='DNI')
-        st.subheader("DNI por Estado")
-        bar_chart_estado = alt.Chart(dni_por_estado).mark_bar().encode(
-            x=alt.X('Estado (diario):N', title='Estado (diario)', sort='-y'),
-            y=alt.Y('DNI:Q', title='DNI'),
-            color='Estado (diario):N'
-        ).properties(width=600, height=400)
-        st.altair_chart(bar_chart_estado, use_container_width=True)
-
-    # DNI por Departamento
+    # DNI por Departamento (Barras)
     if 'DEPARTAMENTO' in df.columns:
-        dni_por_departamento = df.groupby('DEPARTAMENTO').size().reset_index(name='DNI')
-        st.subheader("DNI por Departamento")
+        dni_por_departamento = df.groupby('DEPARTAMENTO').size().reset_index(name='Conteo')
+        st.subheader("Conteo de ID Inscripción por Departamento (Barras)")
+        bar_chart_departamento = alt.Chart(dni_por_departamento).mark_bar().encode(
+            x=alt.X('DEPARTAMENTO:N', title='Departamento', sort='-y'),
+            y=alt.Y('Conteo:Q', title='Conteo'),
+            color='DEPARTAMENTO:N'
+        ).properties(width=600, height=400)
+        st.altair_chart(bar_chart_departamento, use_container_width=True)
+
+    # DNI por Departamento (Torta)
+    if 'DEPARTAMENTO' in df.columns:
+        dni_por_departamento = df.groupby('DEPARTAMENTO').size().reset_index(name='Conteo')
+        st.subheader("Conteo de ID Inscripción por Departamento (Torta)")
         pie_chart_departamento = alt.Chart(dni_por_departamento).mark_arc().encode(
-            theta=alt.Theta(field="DNI", type="quantitative"),
+            theta=alt.Theta(field="Conteo", type="quantitative"),
             color=alt.Color(field='DEPARTAMENTO', type="nominal"),
-            tooltip=['DEPARTAMENTO', 'DNI']
+            tooltip=['DEPARTAMENTO', 'Conteo']
         ).properties(width=600, height=400)
-        st.altair_chart(pie_chart_departamento)
+        st.altair_chart(pie_chart_departamento, use_container_width=True)
 
-    # DNI por Localidad
-    if 'LOCALIDAD' in df.columns:
-        dni_por_localidad = df.groupby('LOCALIDAD').size().reset_index(name='DNI')
-        st.subheader("DNI por Localidad")
+    # DNI por Localidad (Barras)
+    if 'N_LOCALIDAD' in df.columns:
+        dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
+        st.subheader("Conteo de ID Inscripción por Localidad (Barras)")
+        bar_chart_localidad = alt.Chart(dni_por_localidad).mark_bar().encode(
+            x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-y'),
+            y=alt.Y('Conteo:Q', title='Conteo'),
+            color='N_LOCALIDAD:N'
+        ).properties(width=600, height=400)
+        st.altair_chart(bar_chart_localidad, use_container_width=True)
+
+    # DNI por Localidad (Torta)
+    if 'N_LOCALIDAD' in df.columns:
+        dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
+        st.subheader("Conteo de ID Inscripción por Localidad (Torta)")
         pie_chart_localidad = alt.Chart(dni_por_localidad).mark_arc().encode(
-            theta=alt.Theta(field="DNI", type="quantitative"),
-            color=alt.Color(field='LOCALIDAD', type="nominal"),
-            tooltip=['LOCALIDAD', 'DNI']
+            theta=alt.Theta(field="Conteo", type="quantitative"),
+            color=alt.Color(field='N_LOCALIDAD', type="nominal"),
+            tooltip=['N_LOCALIDAD', 'Conteo']
         ).properties(width=600, height=400)
-        st.altair_chart(pie_chart_localidad)
-
-    # DNI por Barrio/Cooperativa
-    if 'BARRIO/COOPERATIVA' in df.columns:
-        dni_por_barrio = df.groupby('BARRIO/COOPERATIVA').size().reset_index(name='DNI')
-        st.subheader("DNI por Barrio/Cooperativa")
-        pie_chart_barrio = alt.Chart(dni_por_barrio).mark_arc().encode(
-            theta=alt.Theta(field="DNI", type="quantitative"),
-            color=alt.Color(field='BARRIO/COOPERATIVA', type="nominal"),
-            tooltip=['BARRIO/COOPERATIVA', 'DNI']
-        ).properties(width=600, height=400)
-        st.altair_chart(pie_chart_barrio)
+        st.altair_chart(pie_chart_localidad, use_container_width=True)
 
 else:
     st.error("No se encontraron datos en el archivo CSV.")
