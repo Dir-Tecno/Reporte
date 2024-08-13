@@ -74,14 +74,15 @@ if not df.empty:
     if 'FEC_INSCRIPCION' in df.columns:
         fecha_min = pd.to_datetime(df['FEC_INSCRIPCION'].min())
         fecha_max = pd.to_datetime(df['FEC_INSCRIPCION'].max())
-        # Verifica si `fecha_min` y `fecha_max` son objetos datetime
+        # Asegúrate de que los valores del control deslizante sean del tipo datetime
         st.write("Fecha mínima:", fecha_min)
         st.write("Fecha máxima:", fecha_max)
         fecha_range = st.slider(
             "Selecciona el rango de fechas",
             min_value=fecha_min,
             max_value=fecha_max,
-            value=(fecha_min, fecha_max)
+            value=(fecha_min, fecha_max),
+            format="YYYY-MM-DD"  # Formato de fecha para el control deslizante
         )
         df = df[(pd.to_datetime(df['FEC_INSCRIPCION']) >= fecha_range[0]) & (pd.to_datetime(df['FEC_INSCRIPCION']) <= fecha_range[1])]
 
@@ -109,24 +110,24 @@ if not df.empty:
     st.header("Gráficos Predefinidos")
 
     # DNI por Departamento (Barras)
-    if 'DEPARTAMENTO' in df.columns:
-        dni_por_departamento = df.groupby('DEPARTAMENTO').size().reset_index(name='Conteo')
+    if 'N_DEPARTAMENTO' in df.columns:
+        dni_por_departamento = df.groupby('N_DEPARTAMENTO').size().reset_index(name='Conteo')
         st.subheader("Conteo de ID Inscripción por Departamento (Barras)")
         bar_chart_departamento = alt.Chart(dni_por_departamento).mark_bar().encode(
-            x=alt.X('DEPARTAMENTO:N', title='Departamento', sort='-y'),
+            x=alt.X('N_DEPARTAMENTO:N', title='Departamento', sort='-y'),
             y=alt.Y('Conteo:Q', title='Conteo'),
-            color='DEPARTAMENTO:N'
+            color='N_DEPARTAMENTO:N'
         ).properties(width=600, height=400)
         st.altair_chart(bar_chart_departamento, use_container_width=True)
 
     # DNI por Departamento (Torta)
-    if 'DEPARTAMENTO' in df.columns:
-        dni_por_departamento = df.groupby('DEPARTAMENTO').size().reset_index(name='Conteo')
+    if 'N_DEPARTAMENTO' in df.columns:
+        dni_por_departamento = df.groupby('N_DEPARTAMENTO').size().reset_index(name='Conteo')
         st.subheader("Conteo de ID Inscripción por Departamento (Torta)")
         pie_chart_departamento = alt.Chart(dni_por_departamento).mark_arc().encode(
             theta=alt.Theta(field="Conteo", type="quantitative"),
-            color=alt.Color(field='DEPARTAMENTO', type="nominal"),
-            tooltip=['DEPARTAMENTO', 'Conteo']
+            color=alt.Color(field='N_DEPARTAMENTO', type="nominal"),
+            tooltip=['N_DEPARTAMENTO', 'Conteo']
         ).properties(width=600, height=400)
         st.altair_chart(pie_chart_departamento, use_container_width=True)
 
@@ -154,4 +155,3 @@ if not df.empty:
 
 else:
     st.error("No se encontraron datos en el archivo CSV.")
-
