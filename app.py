@@ -61,10 +61,14 @@ if 'FEC_INSCRIPCION' in df.columns:
     fecha_min = df['FEC_INSCRIPCION'].min()
     fecha_max = df['FEC_INSCRIPCION'].max()
 
-    # Crear los selectores de fechas para seleccionar el rango de fechas
-    fecha_inicio = st.date_input("Fecha de Inicio", min_value=fecha_min, max_value=fecha_max, value=fecha_min)
-    fecha_fin = st.date_input("Fecha de Fin", min_value=fecha_inicio, max_value=fecha_max, value=fecha_max)
+    # Asegurarse de que las fechas de inicio y fin sean de tipo datetime
+    fecha_inicio = st.date_input("Fecha de Inicio", min_value=fecha_min.date(), max_value=fecha_max.date(), value=fecha_min.date())
+    fecha_fin = st.date_input("Fecha de Fin", min_value=fecha_inicio, max_value=fecha_max.date(), value=fecha_max.date())
     
+    # Convertir fechas de inicio y fin a datetime
+    fecha_inicio = pd.Timestamp(fecha_inicio)
+    fecha_fin = pd.Timestamp(fecha_fin)
+
     # Filtrar los datos según el rango de fechas seleccionado
     df = df[(df['FEC_INSCRIPCION'] >= fecha_inicio) & (df['FEC_INSCRIPCION'] <= fecha_fin)]
 
