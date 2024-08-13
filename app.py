@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-import os
 from google.cloud import storage
-import json
 from google.oauth2 import service_account
 import tempfile
 
@@ -76,7 +74,15 @@ if not df.empty:
     if 'FEC_INSCRIPCION' in df.columns:
         fecha_min = pd.to_datetime(df['FEC_INSCRIPCION'].min())
         fecha_max = pd.to_datetime(df['FEC_INSCRIPCION'].max())
-        fecha_range = st.slider("Selecciona el rango de fechas", min_value=fecha_min, max_value=fecha_max, value=(fecha_min, fecha_max))
+        # Verifica si `fecha_min` y `fecha_max` son objetos datetime
+        st.write("Fecha mínima:", fecha_min)
+        st.write("Fecha máxima:", fecha_max)
+        fecha_range = st.slider(
+            "Selecciona el rango de fechas",
+            min_value=fecha_min,
+            max_value=fecha_max,
+            value=(fecha_min, fecha_max)
+        )
         df = df[(pd.to_datetime(df['FEC_INSCRIPCION']) >= fecha_range[0]) & (pd.to_datetime(df['FEC_INSCRIPCION']) <= fecha_range[1])]
 
     # Selección de campos para el gráfico
@@ -148,3 +154,4 @@ if not df.empty:
 
 else:
     st.error("No se encontraron datos en el archivo CSV.")
+
