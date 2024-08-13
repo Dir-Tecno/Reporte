@@ -21,27 +21,27 @@ def download_from_bucket(blob_name, bucket_name):
 
 # Función para crear gráfico basado en selecciones del usuario
 #def create_chart(df, x_column, y_column, chart_type):
-    if chart_type == 'Bar':
+    #if chart_type == 'Bar':
         chart = alt.Chart(df).mark_bar().encode(
             x=alt.X(x_column, sort='-y'),
             y=y_column
         )
-    elif chart_type == 'Line':
+    #elif chart_type == 'Line':
         chart = alt.Chart(df).mark_line().encode(
             x=x_column,
             y=y_column
         )
-    elif chart_type == 'Scatter':
+   # elif chart_type == 'Scatter':
         chart = alt.Chart(df).mark_circle().encode(
             x=x_column,
             y=y_column
         )
-    elif chart_type == 'Pie':
+   # elif chart_type == 'Pie':
         chart = alt.Chart(df).mark_arc().encode(
             theta=y_column,
             color=x_column
         )
-    return chart.properties(width=600, height=400)
+   # return chart.properties(width=600, height=400)
 
 # Configuración de la barra lateral
 st.sidebar.title("Filtros")
