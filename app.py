@@ -70,21 +70,23 @@ if not df.empty:
     # Filtrar el DataFrame según las selecciones
     df = df[df['N_LOCALIDAD'].isin(localidades) & df['N_DEPARTAMENTO'].isin(departamentos)]
 
-    # Filtro de fecha con control deslizante
+    # Convertir las fechas en el DataFrame a un formato estándar
+    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%m/%d/%Y %H:%M:%S')
+
     if 'FEC_INSCRIPCION' in df.columns:
-        fecha_min = pd.to_datetime(df['FEC_INSCRIPCION'].min())
-        fecha_max = pd.to_datetime(df['FEC_INSCRIPCION'].max())
-        # Asegúrate de que los valores del control deslizante sean del tipo datetime
+        fecha_min = df['FEC_INSCRIPCION'].min()
+        fecha_max = df['FEC_INSCRIPCION'].max()
         st.write("Fecha mínima:", fecha_min)
         st.write("Fecha máxima:", fecha_max)
         fecha_range = st.slider(
-            "Selecciona el rango de fechas",
-            min_value=fecha_min,
-            max_value=fecha_max,
-            value=(fecha_min, fecha_max),
-            format="YYYY-MM-DD"  # Formato de fecha para el control deslizante
-        )
-        df = df[(pd.to_datetime(df['FEC_INSCRIPCION']) >= fecha_range[0]) & (pd.to_datetime(df['FEC_INSCRIPCION']) <= fecha_range[1])]
+        "Selecciona el rango de fechas",
+        min_value=fecha_min,
+        max_value=fecha_max,
+        value=(fecha_min, fecha_max),
+        format="YYYY-MM-DD"  # Formato de fecha para el control deslizante
+    )
+    df = df[(df['FEC_INSCRIPCION'] >= fecha_range[0]) & (df['FEC_INSCRIPCION'] <= fecha_range[1])]
+
 
     # Selección de campos para el gráfico
     x_column = st.selectbox("Selecciona el campo para el eje X", df.columns)
