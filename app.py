@@ -55,7 +55,7 @@ csv_file_path = download_from_bucket(blob_name, bucket_name)
 df = pd.read_csv(csv_file_path)
 
 # Convertir las fechas en el DataFrame a un formato estándar
-df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%m/%d/%Y %H:%M:%S')
+df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%d/%m/%Y %H:%M:%S')
 
 # Filtros en la barra lateral
 if 'N_LOCALIDAD' in df.columns:
@@ -83,12 +83,16 @@ fecha_max = df['FEC_INSCRIPCION'].max().strftime('%Y-%m-%d')
 # Mostrar fechas en la parte principal
 col1, col2 = st.columns(2)
 with col1:
-    fecha_inicio = st.date_input("Fecha de Inicio", value=datetime.strptime(fecha_min, '%Y-%m-%d'), min_value=datetime.strptime(fecha_min, '%Y-%m-%d'), max_value=datetime.strptime(fecha_max, '%Y-%m-%d'))
+    fecha_inicio = st.date_input("Fecha de Inicio", value=datetime.strptime(fecha_min, '%Y-%m-%d'))
 with col2:
-    fecha_fin = st.date_input("Fecha de Fin", value=datetime.strptime(fecha_max, '%Y-%m-%d'), min_value=datetime.strptime(fecha_min, '%Y-%m-%d'), max_value=datetime.strptime(fecha_max, '%Y-%m-%d'))
+    fecha_fin = st.date_input("Fecha de Fin", value=datetime.strptime(fecha_max, '%Y-%m-%d'))
+
+# Asegurarse de que las fechas seleccionadas sean del tipo datetime.date
+fecha_inicio = pd.to_datetime(fecha_inicio).date()
+fecha_fin = pd.to_datetime(fecha_fin).date()
 
 # Filtrar los datos según el rango de fechas seleccionado
-df = df[(df['FEC_INSCRIPCION'] >= fecha_inicio) & (df['FEC_INSCRIPCION'] <= fecha_fin)]
+df = df[(df['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
 
 # Apartado de personalización de gráficos
 st.sidebar.header("Personalización de Gráficos")
