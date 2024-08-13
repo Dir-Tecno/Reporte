@@ -57,19 +57,16 @@ df = pd.read_csv(csv_file_path)
 df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%m/%d/%Y %H:%M:%S')
 
 if 'FEC_INSCRIPCION' in df.columns:
-    # Crear el slider para seleccionar el rango de fechas
+    # Obtener las fechas mínima y máxima
     fecha_min = df['FEC_INSCRIPCION'].min()
     fecha_max = df['FEC_INSCRIPCION'].max()
-    fecha_range = st.slider(
-        "Selecciona el rango de fechas",
-        min_value=fecha_min,
-        max_value=fecha_max,
-        value=(fecha_min, fecha_max),
-        format="YYYY-MM-DD"
-    )
+
+    # Crear los selectores de fechas para seleccionar el rango de fechas
+    fecha_inicio = st.date_input("Fecha de Inicio", min_value=fecha_min, max_value=fecha_max, value=fecha_min)
+    fecha_fin = st.date_input("Fecha de Fin", min_value=fecha_inicio, max_value=fecha_max, value=fecha_max)
     
     # Filtrar los datos según el rango de fechas seleccionado
-    df = df[(df['FEC_INSCRIPCION'] >= fecha_range[0]) & (df['FEC_INSCRIPCION'] <= fecha_range[1])]
+    df = df[(df['FEC_INSCRIPCION'] >= fecha_inicio) & (df['FEC_INSCRIPCION'] <= fecha_fin)]
 
     # Selección de campos para el gráfico
     x_column = st.selectbox("Selecciona el campo para el eje X", df.columns)
@@ -140,4 +137,3 @@ if 'FEC_INSCRIPCION' in df.columns:
 
 else:
     st.error("No se encontraron datos en el archivo CSV.")
-
