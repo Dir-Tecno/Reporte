@@ -53,11 +53,16 @@ csv_file_path = download_from_bucket(blob_name, bucket_name)
 # Cargar los datos en un DataFrame
 df = pd.read_csv(csv_file_path)
 
-# Convertir las fechas usando el formato correcto
+# Convertir las fechas usando diferentes formatos
 try:
-    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%d/%m/%Y %H:%M:%S', errors='raise')
+    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%d/%m/%Y %H:%M:%S', errors='coerce')
+    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
 except Exception as e:
     st.error(f"Error al convertir las fechas: {e}")
+
+# Verificar si hay fechas nulas después de la conversión
+if df['FEC_INSCRIPCION'].isnull().any():
+    st.error("Algunas fechas no pudieron ser convertidas. Verifica que todos los formatos de fecha en el archivo CSV sean consistentes.")
 
 # Filtros en la barra lateral
 if 'N_LOCALIDAD' in df.columns:
@@ -79,18 +84,21 @@ if 'N_DEPARTAMENTO' in df.columns:
 st.title("Reporte 2024")
 
 # Obtener la fecha mínima y máxima
-fecha_min = df['FEC_INSCRIPCION'].min().date()
-fecha_max = df['FEC_INSCRIPCION'].max().date()
+fecha_min = df['FEC_INSCRIPCION'].min().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
+fecha_max = df['FEC_INSCRIPCION'].max().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
 
-# Mostrar fechas en la parte principal
-col1, col2 = st.columns(2)
-with col1:
-    fecha_inicio = st.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
-with col2:
-    fecha_fin = st.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
+if fecha_min and fecha_max:
+    # Mostrar fechas en la parte principal
+    col1, col2 = st.columns(2)
+    with col1:
+        fecha_inicio = st.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
+    with col2:
+        fecha_fin = st.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
 
-# Filtrar los datos según el rango de fechas seleccionado
-df = df[(df['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
+    # Filtrar los datos según el rango de fechas seleccionado
+    df = df[(df['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
+else:
+    st.error("No se pueden determinar las fechas mínimas y máximas. Asegúrate de que todas las fechas en el archivo CSV sean válidas.")
 
 # Apartado de personalización de gráficos
 st.sidebar.header("Personalización de Gráficos")
