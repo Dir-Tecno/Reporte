@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from datetime import datetime
 import tempfile
 from google.cloud import storage
 from google.oauth2 import service_account
@@ -54,9 +53,9 @@ csv_file_path = download_from_bucket(blob_name, bucket_name)
 # Cargar los datos en un DataFrame
 df = pd.read_csv(csv_file_path)
 
-# Intentar convertir las fechas automáticamente
+# Convertir las fechas usando el formato correcto
 try:
-    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], infer_datetime_format=True, errors='raise')
+    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%d/%m/%Y %H:%M:%S', errors='raise')
 except Exception as e:
     st.error(f"Error al convertir las fechas: {e}")
 
@@ -160,6 +159,3 @@ if 'N_LOCALIDAD' in df.columns:
         tooltip=['N_LOCALIDAD', 'Conteo']
     ).properties(width=600, height=400)
     st.altair_chart(pie_chart_localidad, use_container_width=True)
-
-else:
-    st.error("No se encontraron datos en el archivo CSV.")
