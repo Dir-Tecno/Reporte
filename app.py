@@ -53,7 +53,7 @@ def create_chart(df, x_column, y_column, chart_type):
 
 # Configuración de la barra lateral
 st.sidebar.title("Navegación")
-page = st.sidebar.selectbox("Selecciona una página", ["Página Principal", "Gráficos de Tortas"])
+page = st.sidebar.selectbox("Selecciona una página", ["Inscripciones", "Empresas"])
 
 # Descargar datos desde el bucket de Google Cloud
 bucket_name = "direccion"
@@ -89,7 +89,7 @@ if page == "Página Principal":
         df = df[df['N_DEPARTAMENTO'].isin(selected_departamento)]
 
     # Sección de fechas
-    st.title("Reporte 2024")
+    st.title("Reporte 2024 Empleo")
 
     # Obtener la fecha mínima y máxima
     fecha_min = df['FEC_INSCRIPCION'].min().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
@@ -155,8 +155,8 @@ if page == "Página Principal":
         ).properties(width=600, height=400)
         st.altair_chart(pie_chart_localidad, use_container_width=True)
 
-elif page == "Gráficos de Tortas":
-    st.title("Gráficos de Tortas - Empresas y Rubros")
+elif page == "Gráficos de Empresas":
+    st.title("Empresas y Rubros")
 
     # Filtrar para el segundo CSV
     df_empresas = df[df['N_EMPRESA'].notnull()]
