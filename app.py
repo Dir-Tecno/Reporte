@@ -52,7 +52,8 @@ def create_chart(df, x_column, y_column, chart_type):
     return chart.properties(width=600, height=400)
 
 # Configuración de la barra lateral
-st.sidebar.title("Filtros")
+st.sidebar.title("Navegación")
+page = st.sidebar.selectbox("Selecciona una página", ["Página Principal", "Gráficos de Tortas"])
 
 # Descargar datos desde el bucket de Google Cloud
 bucket_name = "direccion"
@@ -70,133 +71,112 @@ except Exception as e:
 if df['FEC_INSCRIPCION'].isnull().any():
     st.error("Algunas fechas no pudieron ser convertidas. Verifica que todos los formatos de fecha en el archivo CSV sean consistentes.")
 
-# Filtros en la barra lateral
-if 'N_LOCALIDAD' in df.columns:
-    localidades = df['N_LOCALIDAD'].unique()
-    selected_localidad = st.sidebar.multiselect("Filtrar por Localidad", localidades, default=localidades)
+if page == "Página Principal":
+    # Filtros en la barra lateral
+    if 'N_LOCALIDAD' in df.columns:
+        localidades = df['N_LOCALIDAD'].unique()
+        selected_localidad = st.sidebar.multiselect("Filtrar por Localidad", localidades, default=localidades)
 
-if 'N_DEPARTAMENTO' in df.columns:
-    departamentos = df['N_DEPARTAMENTO'].unique()
-    selected_departamento = st.sidebar.multiselect("Filtrar por Departamento", departamentos, default=departamentos)
+    if 'N_DEPARTAMENTO' in df.columns:
+        departamentos = df['N_DEPARTAMENTO'].unique()
+        selected_departamento = st.sidebar.multiselect("Filtrar por Departamento", departamentos, default=departamentos)
 
-# Aplicar filtros
-if 'N_LOCALIDAD' in df.columns:
-    df = df[df['N_LOCALIDAD'].isin(selected_localidad)]
+    # Aplicar filtros
+    if 'N_LOCALIDAD' in df.columns:
+        df = df[df['N_LOCALIDAD'].isin(selected_localidad)]
 
-if 'N_DEPARTAMENTO' in df.columns:
-    df = df[df['N_DEPARTAMENTO'].isin(selected_departamento)]
+    if 'N_DEPARTAMENTO' in df.columns:
+        df = df[df['N_DEPARTAMENTO'].isin(selected_departamento)]
 
-# Sección de fechas
-st.title("Reporte 2024")
+    # Sección de fechas
+    st.title("Reporte 2024")
 
-# Obtener la fecha mínima y máxima
-fecha_min = df['FEC_INSCRIPCION'].min().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
-fecha_max = df['FEC_INSCRIPCION'].max().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
+    # Obtener la fecha mínima y máxima
+    fecha_min = df['FEC_INSCRIPCION'].min().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
+    fecha_max = df['FEC_INSCRIPCION'].max().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
 
-if fecha_min and fecha_max:
-    # Mostrar fechas en la parte principal
-    col1, col2 = st.columns(2)
-    with col1:
-        fecha_inicio = st.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
-    with col2:
-        fecha_fin = st.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
+    if fecha_min and fecha_max:
+        # Mostrar fechas en la parte principal
+        col1, col2 = st.columns(2)
+        with col1:
+            fecha_inicio = st.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
+        with col2:
+            fecha_fin = st.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
 
-    # Filtrar los datos según el rango de fechas seleccionado
-    df = df[(df['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
-else:
-    st.error("No se pueden determinar las fechas mínimas y máximas. Asegúrate de que todas las fechas en el archivo CSV sean válidas.")
+        # Filtrar los datos según el rango de fechas seleccionado
+        df = df[(df['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
+    else:
+        st.error("No se pueden determinar las fechas mínimas y máximas. Asegúrate de que todas las fechas en el archivo CSV sean válidas.")
 
-# Apartado de personalización de gráficos (comentado)
-# st.sidebar.header("Personalización de Gráficos")
-# x_column = st.sidebar.selectbox("Selecciona el campo para el eje X", df.columns)
-# y_column = st.sidebar.selectbox("Selecciona el campo para el eje Y (conteo)", ['Conteo'] + list(df.columns))
-# chart_type = st.sidebar.selectbox("Selecciona el tipo de gráfico", ['Bar', 'Line', 'Scatter', 'Pie'])
+    # Gráficos predefinidos
+    st.header("Gráficos Predefinidos")
 
-# Preparar datos para el gráfico
-# if y_column == 'Conteo':
-#     chart_data = df.groupby(x_column).size().reset_index(name='Conteo')
-# else:
-#     chart_data = df[[x_column, y_column]]
+    # DNI por Departamento (Barras)
+    if 'N_DEPARTAMENTO' in df.columns:
+        dni_por_departamento = df.groupby('N_DEPARTAMENTO').size().reset_index(name='Conteo')
+        st.subheader("Conteo de ID Inscripción por Departamento (Barras)")
+        bar_chart_departamento = alt.Chart(dni_por_departamento).mark_bar().encode(
+            x=alt.X('N_DEPARTAMENTO:N', title='Departamento', sort='-y'),
+            y=alt.Y('Conteo:Q', title='Conteo'),
+            color='N_DEPARTAMENTO:N'
+        ).properties(width=600, height=400)
+        st.altair_chart(bar_chart_departamento, use_container_width=True)
 
-# Crear y mostrar el gráfico personalizado
-# st.header("Gráfico Personalizado")
-# chart = create_chart(chart_data, x_column, 'Conteo' if y_column == 'Conteo' else y_column, chart_type)
-# st.altair_chart(chart, use_container_width=True)
+    # DNI por Departamento (Torta)
+    if 'N_DEPARTAMENTO' in df.columns:
+        dni_por_departamento = df.groupby('N_DEPARTAMENTO').size().reset_index(name='Conteo')
+        st.subheader("Conteo de ID Inscripción por Departamento (Torta)")
+        pie_chart_departamento = alt.Chart(dni_por_departamento).mark_arc().encode(
+            theta=alt.Theta(field="Conteo", type="quantitative"),
+            color=alt.Color(field='N_DEPARTAMENTO', type="nominal"),
+            tooltip=['N_DEPARTAMENTO', 'Conteo']
+        ).properties(width=600, height=400)
+        st.altair_chart(pie_chart_departamento, use_container_width=True)
 
-# Mostrar los datos utilizados para el gráfico
-# st.header("Datos Utilizados")
-# st.dataframe(chart_data)
+    # DNI por Localidad (Barras)
+    if 'N_LOCALIDAD' in df.columns:
+        dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
+        st.subheader("Conteo de ID Inscripción por Localidad (Barras)")
+        bar_chart_localidad = alt.Chart(dni_por_localidad).mark_bar().encode(
+            x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-y'),
+            y=alt.Y('Conteo:Q', title='Conteo'),
+            color='N_LOCALIDAD:N'
+        ).properties(width=600, height=400)
+        st.altair_chart(bar_chart_localidad, use_container_width=True)
 
-# Gráficos predefinidos
-st.header("Gráficos Predefinidos")
+    # DNI por Localidad (Torta)
+    if 'N_LOCALIDAD' in df.columns:
+        dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
+        st.subheader("Conteo de ID Inscripción por Localidad (Torta)")
+        pie_chart_localidad = alt.Chart(dni_por_localidad).mark_arc().encode(
+            theta=alt.Theta(field="Conteo", type="quantitative"),
+            color=alt.Color(field='N_LOCALIDAD', type="nominal"),
+            tooltip=['N_LOCALIDAD', 'Conteo']
+        ).properties(width=600, height=400)
+        st.altair_chart(pie_chart_localidad, use_container_width=True)
 
-# DNI por Departamento (Barras)
-if 'N_DEPARTAMENTO' in df.columns:
-    dni_por_departamento = df.groupby('N_DEPARTAMENTO').size().reset_index(name='Conteo')
-    st.subheader("Conteo de ID Inscripción por Departamento (Barras)")
-    bar_chart_departamento = alt.Chart(dni_por_departamento).mark_bar().encode(
-        x=alt.X('N_DEPARTAMENTO:N', title='Departamento', sort='-y'),
-        y=alt.Y('Conteo:Q', title='Conteo'),
-        color='N_DEPARTAMENTO:N'
-    ).properties(width=600, height=400)
-    st.altair_chart(bar_chart_departamento, use_container_width=True)
+elif page == "Gráficos de Tortas":
+    st.title("Gráficos de Tortas - Empresas y Rubros")
 
-# DNI por Departamento (Torta)
-if 'N_DEPARTAMENTO' in df.columns:
-    dni_por_departamento = df.groupby('N_DEPARTAMENTO').size().reset_index(name='Conteo')
-    st.subheader("Conteo de ID Inscripción por Departamento (Torta)")
-    pie_chart_departamento = alt.Chart(dni_por_departamento).mark_arc().encode(
+    # Filtrar para el segundo CSV
+    df_empresas = df[df['N_EMPRESA'].notnull()]
+
+    # Recuento distintivo para N_EMPRESA y N_CATEGORIA_EMPLEO
+    st.subheader("Recuento Distintivo de N_EMPRESA por N_CATEGORIA_EMPLEO")
+    empresa_categoria_distinctivo = df_empresas.groupby(['N_EMPRESA', 'N_CATEGORIA_EMPLEO']).size().reset_index(name='Conteo')
+    pie_chart_empresa_categoria = alt.Chart(empresa_categoria_distinctivo).mark_arc().encode(
         theta=alt.Theta(field="Conteo", type="quantitative"),
-        color=alt.Color(field='N_DEPARTAMENTO', type="nominal"),
-        tooltip=['N_DEPARTAMENTO', 'Conteo']
+        color=alt.Color(field='N_CATEGORIA_EMPLEO', type="nominal"),
+        tooltip=['N_EMPRESA', 'N_CATEGORIA_EMPLEO', 'Conteo']
     ).properties(width=600, height=400)
-    st.altair_chart(pie_chart_departamento, use_container_width=True)
+    st.altair_chart(pie_chart_empresa_categoria, use_container_width=True)
 
-# DNI por Localidad (Barras)
-if 'N_LOCALIDAD' in df.columns:
-    dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
-    st.subheader("Conteo de ID Inscripción por Localidad (Barras)")
-    bar_chart_localidad = alt.Chart(dni_por_localidad).mark_bar().encode(
-        x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-y'),
-        y=alt.Y('Conteo:Q', title='Conteo'),
-        color='N_LOCALIDAD:N'
+    # Recuento distintivo para N_EMPRESA, CANTIDAD_EMPLEADOS, y N_PUESTO_EMPLEO
+    st.subheader("Recuento Distintivo de N_EMPRESA, CANTIDAD_EMPLEADOS y N_PUESTO_EMPLEO")
+    empleados_puestos_distinctivo = df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS': 'sum'}).reset_index()
+    pie_chart_empleados_puestos = alt.Chart(empleados_puestos_distinctivo).mark_arc().encode(
+        theta=alt.Theta(field="CANTIDAD_EMPLEADOS", type="quantitative"),
+        color=alt.Color(field='N_EMPRESA', type="nominal"),
+        tooltip=['N_EMPRESA', 'N_PUESTO_EMPLEO', 'CANTIDAD_EMPLEADOS']
     ).properties(width=600, height=400)
-    st.altair_chart(bar_chart_localidad, use_container_width=True)
-
-# DNI por Localidad (Torta)
-if 'N_LOCALIDAD' in df.columns:
-    dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
-    st.subheader("Conteo de ID Inscripción por Localidad (Torta)")
-    pie_chart_localidad = alt.Chart(dni_por_localidad).mark_arc().encode(
-        theta=alt.Theta(field="Conteo", type="quantitative"),
-        color=alt.Color(field='N_LOCALIDAD', type="nominal"),
-        tooltip=['N_LOCALIDAD', 'Conteo']
-    ).properties(width=600, height=400)
-    st.altair_chart(pie_chart_localidad, use_container_width=True)
-
-# Filtro para el segundo CSV
-df_empresas = df[df['N_EMPRESA'].notnull()]
-
-# Gráfico 1: N_EMPRESA vs N_CATEGORIA_EMPLEO
-st.subheader("N_EMPRESA por N_CATEGORIA_EMPLEO (Barras)")
-empresa_categoria = df_empresas.groupby(['N_EMPRESA', 'N_CATEGORIA_EMPLEO']).size().reset_index(name='Conteo')
-bar_chart_empresa_categoria = alt.Chart(empresa_categoria).mark_bar().encode(
-    x=alt.X('N_CATEGORIA_EMPLEO:N', title='Rubro', sort='-y'),
-    y=alt.Y('Conteo:Q', title='Conteo'),
-    color='N_EMPRESA:N',
-    tooltip=['N_EMPRESA', 'Conteo']
-).properties(width=600, height=400)
-st.altair_chart(bar_chart_empresa_categoria, use_container_width=True)
-
-# Gráfico 2: N_EMPRESA, CANTIDAD_EMPLEADOS, y N_PUESTO_EMPLEO
-st.subheader("N_EMPRESA con CANTIDAD_EMPLEADOS y N_PUESTO_EMPLEO")
-empleados_puestos = df_empresas[['N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'N_PUESTO_EMPLEO']].dropna()
-bar_chart_empleados_puestos = alt.Chart(empleados_puestos).mark_bar().encode(
-    x=alt.X('N_EMPRESA:N', title='Empresa', sort='-y'),
-    y=alt.Y('CANTIDAD_EMPLEADOS:Q', title='Cantidad de Empleados'),
-    color='N_PUESTO_EMPLEO:N',
-    tooltip=['N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'N_PUESTO_EMPLEO']
-).properties(width=600, height=400)
-st.altair_chart(bar_chart_empleados_puestos, use_container_width=True)
-
-
+    st.altair_chart(pie_chart_empleados_puestos, use_container_width=True)
