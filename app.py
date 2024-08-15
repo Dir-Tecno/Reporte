@@ -18,6 +18,15 @@ def download_from_bucket(blob_name, bucket_name):
         blob.download_to_filename(temp_file.name)
         return temp_file.name
 
+# Función para cargar y procesar datos
+def load_data_from_bucket(blob_names, bucket_name):
+    dfs = []
+    for blob_name in blob_names:
+        csv_file_path = download_from_bucket(blob_name, bucket_name)
+        df = pd.read_csv(csv_file_path)
+        dfs.append(df)
+    return pd.concat(dfs, ignore_index=True)
+
 # Función para crear gráfico basado en selecciones del usuario
 def create_chart(df, x_column, y_column, chart_type):
     if chart_type == 'Bar':
@@ -47,11 +56,8 @@ st.sidebar.title("Filtros")
 
 # Descargar datos desde el bucket de Google Cloud
 bucket_name = "direccion"
-blob_name = "inscripciones_empleo.csv"
-csv_file_path = download_from_bucket(blob_name, bucket_name)
-
-# Cargar los datos en un DataFrame
-df = pd.read_csv(csv_file_path)
+blob_names = ["inscripciones_empleo.csv", "SQL_EMPRESAS_ADHERIDAS.csv"]  # Agrega aquí los nombres de los archivos
+df = load_data_from_bucket(blob_names, bucket_name)
 
 # Convertir las fechas usando diferentes formatos
 try:
@@ -100,26 +106,26 @@ if fecha_min and fecha_max:
 else:
     st.error("No se pueden determinar las fechas mínimas y máximas. Asegúrate de que todas las fechas en el archivo CSV sean válidas.")
 
-# Apartado de personalización de gráficos
-st.sidebar.header("Personalización de Gráficos")
-x_column = st.sidebar.selectbox("Selecciona el campo para el eje X", df.columns)
-y_column = st.sidebar.selectbox("Selecciona el campo para el eje Y (conteo)", ['Conteo'] + list(df.columns))
-chart_type = st.sidebar.selectbox("Selecciona el tipo de gráfico", ['Bar', 'Line', 'Scatter', 'Pie'])
+# Apartado de personalización de gráficos (comentado)
+# st.sidebar.header("Personalización de Gráficos")
+# x_column = st.sidebar.selectbox("Selecciona el campo para el eje X", df.columns)
+# y_column = st.sidebar.selectbox("Selecciona el campo para el eje Y (conteo)", ['Conteo'] + list(df.columns))
+# chart_type = st.sidebar.selectbox("Selecciona el tipo de gráfico", ['Bar', 'Line', 'Scatter', 'Pie'])
 
 # Preparar datos para el gráfico
-if y_column == 'Conteo':
-    chart_data = df.groupby(x_column).size().reset_index(name='Conteo')
-else:
-    chart_data = df[[x_column, y_column]]
+# if y_column == 'Conteo':
+#     chart_data = df.groupby(x_column).size().reset_index(name='Conteo')
+# else:
+#     chart_data = df[[x_column, y_column]]
 
 # Crear y mostrar el gráfico personalizado
-st.header("Gráfico Personalizado")
-chart = create_chart(chart_data, x_column, 'Conteo' if y_column == 'Conteo' else y_column, chart_type)
-st.altair_chart(chart, use_container_width=True)
+# st.header("Gráfico Personalizado")
+# chart = create_chart(chart_data, x_column, 'Conteo' if y_column == 'Conteo' else y_column, chart_type)
+# st.altair_chart(chart, use_container_width=True)
 
 # Mostrar los datos utilizados para el gráfico
-st.header("Datos Utilizados")
-st.dataframe(chart_data)
+# st.header("Datos Utilizados")
+# st.dataframe(chart_data)
 
 # Gráficos predefinidos
 st.header("Gráficos Predefinidos")
@@ -167,3 +173,18 @@ if 'N_LOCALIDAD' in df.columns:
         tooltip=['N_LOCALIDAD', 'Conteo']
     ).properties(width=600, height=400)
     st.altair_chart(pie_chart_localidad, use_container_width=True)
+
+# Gráfico de N_EMPRESA y N_CATEGORIA_EMPLEO
+if 'N_EMPRESA' in df.columns and 'N_CATEGORIA_EMPLEO' in df.columns:
+    empresa_categoria = df.groupby(['N_EMPRESA', 'N_CATEGORIA_EMPLEO']).size().reset_index(name='Conteo')
+    
+    st.subheader("Conteo por Empresa y Categoría de Empleo")
+    empresa_categoria_chart = alt.Chart(empresa_categoria).mark_bar().encode(
+        x=alt.X('N_EMPRESA:N', title='Empresa', sort='-y'),
+        y=alt.Y('Conteo:Q', title='Conteo'),
+        color='N_CATEGORIA_EMPLEO:N',
+        tooltip=['N_EMPRESA', 'N_CATEGORIA_EMPLEO', 'Conteo']
+    ).properties(width=600, height=400)
+    st.altair_chart(empresa_categoria_chart, use_container_width=True)
+
+
