@@ -174,17 +174,29 @@ if 'N_LOCALIDAD' in df.columns:
     ).properties(width=600, height=400)
     st.altair_chart(pie_chart_localidad, use_container_width=True)
 
-# Gráfico de N_EMPRESA y N_CATEGORIA_EMPLEO
-if 'N_EMPRESA' in df.columns and 'N_CATEGORIA_EMPLEO' in df.columns:
-    empresa_categoria = df.groupby(['N_EMPRESA', 'N_CATEGORIA_EMPLEO']).size().reset_index(name='Conteo')
-    
-    st.subheader("Conteo por Empresa y Categoría de Empleo")
-    empresa_categoria_chart = alt.Chart(empresa_categoria).mark_bar().encode(
-        x=alt.X('N_EMPRESA:N', title='Empresa', sort='-y'),
-        y=alt.Y('Conteo:Q', title='Conteo'),
-        color='N_CATEGORIA_EMPLEO:N',
-        tooltip=['N_EMPRESA', 'N_CATEGORIA_EMPLEO', 'Conteo']
-    ).properties(width=600, height=400)
-    st.altair_chart(empresa_categoria_chart, use_container_width=True)
+# Filtro para el segundo CSV
+df_empresas = df[df['N_EMPRESA'].notnull()]
+
+# Gráfico 1: N_EMPRESA vs N_CATEGORIA_EMPLEO
+st.subheader("N_EMPRESA por N_CATEGORIA_EMPLEO (Barras)")
+empresa_categoria = df_empresas.groupby(['N_EMPRESA', 'N_CATEGORIA_EMPLEO']).size().reset_index(name='Conteo')
+bar_chart_empresa_categoria = alt.Chart(empresa_categoria).mark_bar().encode(
+    x=alt.X('N_CATEGORIA_EMPLEO:N', title='Rubro', sort='-y'),
+    y=alt.Y('Conteo:Q', title='Conteo'),
+    color='N_EMPRESA:N',
+    tooltip=['N_EMPRESA', 'Conteo']
+).properties(width=600, height=400)
+st.altair_chart(bar_chart_empresa_categoria, use_container_width=True)
+
+# Gráfico 2: N_EMPRESA, CANTIDAD_EMPLEADOS, y N_PUESTO_EMPLEO
+st.subheader("N_EMPRESA con CANTIDAD_EMPLEADOS y N_PUESTO_EMPLEO")
+empleados_puestos = df_empresas[['N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'N_PUESTO_EMPLEO']].dropna()
+bar_chart_empleados_puestos = alt.Chart(empleados_puestos).mark_bar().encode(
+    x=alt.X('N_EMPRESA:N', title='Empresa', sort='-y'),
+    y=alt.Y('CANTIDAD_EMPLEADOS:Q', title='Cantidad de Empleados'),
+    color='N_PUESTO_EMPLEO:N',
+    tooltip=['N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'N_PUESTO_EMPLEO']
+).properties(width=600, height=400)
+st.altair_chart(bar_chart_empleados_puestos, use_container_width=True)
 
 
