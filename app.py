@@ -85,7 +85,7 @@ if page == "Inscripciones":
         st.error("No se pueden determinar todas las fechas en el archivo CSV.")
 
     # Gráficos predefinidos
-    st.header("Gráficos Predefinidos")
+    st.header("Nueva Oportunidad")
 
     # DNI por Departamento (Barras)
     if 'N_DEPARTAMENTO' in df.columns:
