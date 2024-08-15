@@ -106,7 +106,7 @@ if page == "Página Principal":
         # Filtrar los datos según el rango de fechas seleccionado
         df = df[(df['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
     else:
-        st.error("No se pueden determinar las fechas mínimas y máximas. Asegúrate de que todas las fechas en el archivo CSV sean válidas.")
+        st.error("No se pueden determinar todas las fechas en el archivo CSV.")
 
     # Gráficos predefinidos
     st.header("Gráficos Predefinidos")
