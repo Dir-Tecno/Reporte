@@ -114,7 +114,7 @@ if page == "Inscripciones":
         dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
         st.subheader("Conteo de ID Inscripción por Localidad (Barras)")
         bar_chart_localidad = alt.Chart(dni_por_localidad).mark_bar().encode(
-            x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-y'),
+            x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-x'),
             y=alt.Y('Conteo:Q', title='Conteo'),
             color='N_LOCALIDAD:N'
         ).properties(width=600, height=400)
