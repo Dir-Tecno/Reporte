@@ -27,8 +27,8 @@ def load_data_from_bucket(blob_names, bucket_name):
         dfs.append(df)
     return pd.concat(dfs, ignore_index=True)
 
-# Configuración de las pestañas
-tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
+# Configuración de la aplicación
+st.set_page_config(page_title="Reporte Ejecutivo de Empleo", layout="wide")
 
 # Descargar datos desde el bucket de Google Cloud
 bucket_name = "direccion"
@@ -46,8 +46,12 @@ except Exception as e:
 if df['FEC_INSCRIPCION'].isnull().any():
     st.error("Algunas fechas no pudieron ser convertidas. Verifica que todos los formatos de fecha en el archivo CSV sean consistentes.")
 
+# Configuración de las pestañas
+tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
+
 with tab1:
-    st.title("Nueva  Oportunidad")
+    st.title("Reporte de Inscripciones 2024")
+    st.markdown("### Análisis de inscripciones de empleo para el año 2024.")
 
     # Filtrar los datos solo para la pestaña "Inscripciones"
     df_inscripciones = df[df['N_EMPRESA'].isnull()]
@@ -86,65 +90,85 @@ with tab1:
         st.error("No se pueden determinar todas las fechas en el archivo CSV.")
 
     # Gráficos predefinidos para inscripciones
-    st.subheader("Conteo de ID Inscripción por Departamento")
+    st.markdown("### Gráficos de Inscripciones")
+    
     if 'N_DEPARTAMENTO' in df_inscripciones.columns:
         dni_por_departamento = df_inscripciones.groupby('N_DEPARTAMENTO').size().reset_index(name='Conteo')
-        bar_chart_departamento = alt.Chart(dni_por_departamento).mark_bar().encode(
-            x=alt.X('N_DEPARTAMENTO:N', title='Departamento', sort='-y'),
-            y=alt.Y('Conteo:Q', title='Conteo'),
-            color='N_DEPARTAMENTO:N'
-        ).properties(width=600, height=400)
-        st.altair_chart(bar_chart_departamento, use_container_width=True)
+        st.subheader("Conteo de ID Inscripción por Departamento")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.altair_chart(
+                alt.Chart(dni_por_departamento).mark_bar().encode(
+                    x=alt.X('N_DEPARTAMENTO:N', title='Departamento', sort='-y'),
+                    y=alt.Y('Conteo:Q', title='Conteo'),
+                    color='N_DEPARTAMENTO:N'
+                ).properties(width=300, height=300),
+                use_container_width=True
+            )
+        with col2:
+            st.altair_chart(
+                alt.Chart(dni_por_departamento).mark_arc().encode(
+                    theta=alt.Theta(field="Conteo", type="quantitative"),
+                    color=alt.Color(field='N_DEPARTAMENTO', type="nominal"),
+                    tooltip=['N_DEPARTAMENTO', 'Conteo']
+                ).properties(width=300, height=300),
+                use_container_width=True
+            )
 
-        pie_chart_departamento = alt.Chart(dni_por_departamento).mark_arc().encode(
-            theta=alt.Theta(field="Conteo", type="quantitative"),
-            color=alt.Color(field='N_DEPARTAMENTO', type="nominal"),
-            tooltip=['N_DEPARTAMENTO', 'Conteo']
-        ).properties(width=600, height=400)
-        st.altair_chart(pie_chart_departamento, use_container_width=True)
-
-    st.subheader("Conteo de ID Inscripción por Localidad")
     if 'N_LOCALIDAD' in df_inscripciones.columns:
         dni_por_localidad = df_inscripciones.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
-        bar_chart_localidad = alt.Chart(dni_por_localidad).mark_bar().encode(
-            x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-x'),
-            y=alt.Y('Conteo:Q', title='Conteo'),
-            color='N_LOCALIDAD:N'
-        ).properties(width=600, height=400)
-        st.altair_chart(bar_chart_localidad, use_container_width=True)
-
-        pie_chart_localidad = alt.Chart(dni_por_localidad).mark_arc().encode(
-            theta=alt.Theta(field="Conteo", type="quantitative"),
-            color=alt.Color(field='N_LOCALIDAD', type="nominal"),
-            tooltip=['N_LOCALIDAD', 'Conteo']
-        ).properties(width=600, height=400)
-        st.altair_chart(pie_chart_localidad, use_container_width=True)
+        st.subheader("Conteo de ID Inscripción por Localidad")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.altair_chart(
+                alt.Chart(dni_por_localidad).mark_bar().encode(
+                    x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-x'),
+                    y=alt.Y('Conteo:Q', title='Conteo'),
+                    color='N_LOCALIDAD:N'
+                ).properties(width=300, height=300),
+                use_container_width=True
+            )
+        with col2:
+            st.altair_chart(
+                alt.Chart(dni_por_localidad).mark_arc().encode(
+                    theta=alt.Theta(field="Conteo", type="quantitative"),
+                    color=alt.Color(field='N_LOCALIDAD', type="nominal"),
+                    tooltip=['N_LOCALIDAD', 'Conteo']
+                ).properties(width=300, height=300),
+                use_container_width=True
+            )
 
 with tab2:
-    st.title("Empresas y Rubros")
+    st.title("Análisis de Empresas y Rubros")
+    st.markdown("### Información sobre empresas y sus respectivos rubros.")
 
     # Filtrar los datos solo para la pestaña "Empresas"
     df_empresas = df[df['N_EMPRESA'].notnull()]
 
+    # Previsualización de datos
+    st.subheader("Previsualización de Datos de Empresas")
+    st.dataframe(df_empresas.head())
 
     # Gráficos predefinidos para empresas
     if not df_empresas.empty:
         st.subheader("Recuento Distintivo de N_EMPRESA por N_CATEGORIA_EMPLEO")
-        empresa_categoria_distinctivo = df_empresas.groupby(['N_EMPRESA', 'N_CATEGORIA_EMPLEO']).size().reset_index(name='Conteo')
-        pie_chart_empresa_categoria = alt.Chart(empresa_categoria_distinctivo).mark_arc().encode(
-            theta=alt.Theta(field="Conteo", type="quantitative"),
-            color=alt.Color(field='N_CATEGORIA_EMPLEO', type="nominal"),
-            tooltip=['N_EMPRESA', 'N_CATEGORIA_EMPLEO', 'Conteo']
-        ).properties(width=600, height=400)
-        st.altair_chart(pie_chart_empresa_categoria, use_container_width=True)
+        st.altair_chart(
+            alt.Chart(df_empresas.groupby(['N_EMPRESA', 'N_CATEGORIA_EMPLEO']).size().reset_index(name='Conteo')).mark_arc().encode(
+                theta=alt.Theta(field="Conteo", type="quantitative"),
+                color=alt.Color(field='N_CATEGORIA_EMPLEO', type="nominal"),
+                tooltip=['N_EMPRESA', 'N_CATEGORIA_EMPLEO', 'Conteo']
+            ).properties(width=600, height=400),
+            use_container_width=True
+        )
 
         st.subheader("Recuento Distintivo de N_EMPRESA, CANTIDAD_EMPLEADOS y N_PUESTO_EMPLEO")
-        empleados_puestos_distinctivo = df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS': 'sum'}).reset_index()
-        pie_chart_empleados_puestos = alt.Chart(empleados_puestos_distinctivo).mark_arc().encode(
-            theta=alt.Theta(field="CANTIDAD_EMPLEADOS", type="quantitative"),
-            color=alt.Color(field='N_EMPRESA', type="nominal"),
-            tooltip=['N_EMPRESA', 'N_PUESTO_EMPLEO', 'CANTIDAD_EMPLEADOS']
-        ).properties(width=600, height=400)
-        st.altair_chart(pie_chart_empleados_puestos, use_container_width=True)
+        st.altair_chart(
+            alt.Chart(df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS': 'sum'}).reset_index()).mark_arc().encode(
+                theta=alt.Theta(field="CANTIDAD_EMPLEADOS", type="quantitative"),
+                color=alt.Color(field='N_EMPRESA', type="nominal"),
+                tooltip=['N_EMPRESA', 'N_PUESTO_EMPLEO', 'CANTIDAD_EMPLEADOS']
+            ).properties(width=600, height=400),
+            use_container_width=True
+        )
     else:
         st.error("No se encontraron datos de empresas para mostrar.")
