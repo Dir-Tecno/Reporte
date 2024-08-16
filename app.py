@@ -145,12 +145,6 @@ with tab2:
     # Filtrar los datos solo para la pestaña "Empresas"
     df_empresas = df[df['N_EMPRESA'].notnull()]
 
-    # Aplicar filtros de fechas
-    df_empresas = df_empresas[(df_empresas['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df_empresas['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
-
-    # Previsualización de datos
-    st.subheader("Previsualización de Datos de Empresas")
-    st.dataframe(df_empresas.head())
 
     # Gráficos predefinidos para empresas
     if not df_empresas.empty:
