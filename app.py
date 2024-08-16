@@ -37,37 +37,38 @@ df = load_data_from_bucket(blob_names, bucket_name)
 
 # Convertir las fechas usando diferentes formatos
 try:
-    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%d/%m/%Y %H:%M:%S', errors='coerce')
-    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+    if 'FEC_INSCRIPCION' in df.columns:
+        df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%d/%m/%Y %H:%M:%S', errors='coerce')
+        df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
 except Exception as e:
     st.error(f"Error al convertir las fechas: {e}")
 
 # Verificar si hay fechas nulas después de la conversión
-if df['FEC_INSCRIPCION'].isnull().any():
+if 'FEC_INSCRIPCION' in df.columns and df['FEC_INSCRIPCION'].isnull().any():
     st.error("Algunas fechas no pudieron ser convertidas. Verifica que todos los formatos de fecha en el archivo CSV sean consistentes.")
-
-# Dividir el DataFrame en dos: uno para inscripciones y otro para empresas
-df_inscripciones = df[df['N_EMPRESA'].isnull()].copy()
-df_empresas = df[df['N_EMPRESA'].notnull()].copy()
 
 # Configuración de las pestañas
 tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
 
-# Filtros de fechas globales
-st.sidebar.header("Filtros de Fechas")
-fecha_min = df['FEC_INSCRIPCION'].min().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
-fecha_max = df['FEC_INSCRIPCION'].max().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
+# Filtros de fechas globales para la pestaña "Inscripciones"
+if 'FEC_INSCRIPCION' in df.columns:
+    st.sidebar.header("Filtros de Fechas")
+    fecha_min = df['FEC_INSCRIPCION'].min().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
+    fecha_max = df['FEC_INSCRIPCION'].max().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
 
-if fecha_min and fecha_max:
-    fecha_inicio = st.sidebar.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
-    fecha_fin = st.sidebar.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
-else:
-    st.error("No se pueden determinar todas las fechas en el archivo CSV.")
+    if fecha_min and fecha_max:
+        fecha_inicio = st.sidebar.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
+        fecha_fin = st.sidebar.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
+    else:
+        st.error("No se pueden determinar todas las fechas en el archivo CSV.")
 
 # Pestaña de Inscripciones
 with tab1:
     st.title("Reporte de Inscripciones 2024")
     st.markdown("### Análisis de inscripciones de empleo para el año 2024.")
+
+    # Filtrar los datos solo para la pestaña "Inscripciones"
+    df_inscripciones = df[df['N_EMPRESA'].isnull()]
 
     # Aplicar filtros de fechas
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
@@ -78,9 +79,8 @@ with tab1:
     st.markdown(f"**Conteo Total de Inscripciones:** {total_inscripciones}")
 
     # Botón para mostrar inscripciones distintivas
-    if st.button("Mostrar Inscripciones Distintivas"):
-        inscripciones_unicas = df_inscripciones.drop_duplicates(subset=['ID_INSCRIPCION'])
-        st.dataframe(inscripciones_unicas)
+    if st.button("Mostrar inscripciones distintivas"):
+        st.write(df_inscripciones)
 
     # Filtros en la barra lateral
     st.sidebar.header("Filtros de Inscripciones")
@@ -153,18 +153,16 @@ with tab2:
     st.title("Análisis de Empresas y Rubros")
     st.markdown("### Información sobre empresas y sus respectivos rubros.")
 
-    # Aplicar filtros de fechas
-    if 'FEC_INSCRIPCION' in df_empresas.columns:
-        df_empresas = df_empresas[(df_empresas['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df_empresas['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
+    # Filtrar los datos solo para la pestaña "Empresas"
+    df_empresas = df[df['N_EMPRESA'].notnull()]
 
     # Conteo total de empresas
     total_empresas = df_empresas['CUIT'].nunique()
     st.markdown(f"**Conteo Total de Empresas Adheridas:** {total_empresas}")
 
     # Botón para mostrar empresas distintivas
-    if st.button("Mostrar Empresas Distintivas"):
-        empresas_unicas = df_empresas.drop_duplicates(subset=['CUIT'])
-        st.dataframe(empresas_unicas)
+    if st.button("Mostrar empresas distintivas"):
+        st.write(df_empresas[['CUIT', 'N_EMPRESA', 'N_CATEGORIA_EMPLEO']].drop_duplicates())
 
     # Gráficos predefinidos para empresas
     if not df_empresas.empty:
