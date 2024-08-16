@@ -145,9 +145,6 @@ with tab2:
     # Filtrar los datos solo para la pestaña "Empresas"
     df_empresas = df[df['N_EMPRESA'].notnull()]
 
-    # Previsualización de datos
-    st.subheader("Previsualización de Datos de Empresas")
-    st.dataframe(df_empresas.head())
 
     # Gráficos predefinidos para empresas
     if not df_empresas.empty:
