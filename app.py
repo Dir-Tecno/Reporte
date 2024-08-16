@@ -52,7 +52,7 @@ tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
 
 with tab1:
     st.title("Reporte Nueva Oportunidad 2024")
-    st.markdown("### Análisis de inscripciones de Nueva Oportunidad para el año 2024.")
+    st.markdown("### Análisis de inscripciones")
 
     # Filtrar los datos solo para la pestaña "Inscripciones"
     df_inscripciones = df[df['N_EMPRESA'].isnull()]
