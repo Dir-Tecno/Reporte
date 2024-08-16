@@ -69,8 +69,9 @@ with tab1:
     df_inscripciones = df[df['N_EMPRESA'].isnull()]
 
     # Aplicar filtros de fechas
-    df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df_inscripciones['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
-
+    if 'FEC_INSCRIPCION' in df_inscripciones.columns:
+        df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df_inscripciones['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
+    
     # Conteo total de inscripciones
     total_inscripciones = df_inscripciones.shape[0]
     st.markdown(f"**Conteo Total de Inscripciones:** {total_inscripciones}")
@@ -149,16 +150,12 @@ with tab2:
     # Filtrar los datos solo para la pestaña "Empresas"
     df_empresas = df[df['N_EMPRESA'].notnull()]
 
-    # Aplicar filtros de fechas
-    df_empresas = df_empresas[(df_empresas['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df_empresas['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
-
     # Conteo total de empresas
-    total_empresas = df_empresas['N_EMPRESA'].nunique()
-    st.markdown(f"**Conteo Total de Empresas Adheridas:** {total_empresas}")
+    total_empresas = df_empresas['CUIT'].nunique()
 
-    # Previsualización de datos
-    st.subheader("Previsualización de Datos de Empresas")
-    st.dataframe(df_empresas.head())
+    # Botón con el conteo distintivo de CUIT
+    st.markdown(f"**Conteo Distintivo de CUIT:**")
+    st.button(f"{total_empresas} Empresas Únicas")
 
     # Gráficos predefinidos para empresas
     if not df_empresas.empty:
@@ -181,6 +178,3 @@ with tab2:
             ).properties(width=600, height=400),
             use_container_width=True
         )
-    else:
-        st.error("No se encontraron datos de empresas para mostrar.")
-
