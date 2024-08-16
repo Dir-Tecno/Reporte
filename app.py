@@ -28,7 +28,7 @@ def load_data_from_bucket(blob_names, bucket_name):
     return pd.concat(dfs, ignore_index=True)
 
 # Configuración de la aplicación
-st.set_page_config(page_title="Reporte Ejecutivo de Empleo", layout="wide")
+st.set_page_config(page_title="Reporte de Empleo", layout="wide")
 
 # Descargar datos desde el bucket de Google Cloud
 bucket_name = "direccion"
