@@ -44,6 +44,8 @@ except Exception as e:
 
 # Verificar si hay fechas nulas después de la conversión
 if df['FEC_INSCRIPCION'].isnull().any():
+    st.error("Algunas fechas no pudieron ser convertidas. Verifica que todos los formatos de fecha en el archivo CSV sean consistentes.")
+
 
 # Configuración de las pestañas
 tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
