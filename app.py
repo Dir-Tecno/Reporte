@@ -28,7 +28,7 @@ def load_data_from_bucket(blob_names, bucket_name):
     return pd.concat(dfs, ignore_index=True)
 
 # Configuración de la aplicación
-st.set_page_config(page_title="Reporte de Empleo", layout="wide")
+st.set_page_config(page_title="Reporte Ejecutivo de Empleo", layout="wide")
 
 # Descargar datos desde el bucket de Google Cloud
 bucket_name = "direccion"
@@ -46,16 +46,30 @@ except Exception as e:
 if df['FEC_INSCRIPCION'].isnull().any():
     st.error("Algunas fechas no pudieron ser convertidas. Verifica que todos los formatos de fecha en el archivo CSV sean consistentes.")
 
-
 # Configuración de las pestañas
 tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
 
+# Filtros de fechas globales
+st.sidebar.header("Filtros de Fechas")
+fecha_min = df['FEC_INSCRIPCION'].min().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
+fecha_max = df['FEC_INSCRIPCION'].max().date() if not df['FEC_INSCRIPCION'].isnull().all() else None
+
+if fecha_min and fecha_max:
+    fecha_inicio = st.sidebar.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
+    fecha_fin = st.sidebar.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
+else:
+    st.error("No se pueden determinar todas las fechas en el archivo CSV.")
+
+# Pestaña de Inscripciones
 with tab1:
-    st.title("Reporte Nueva Oportunidad 2024")
-    st.markdown("### Análisis de inscripciones")
+    st.title("Reporte de Inscripciones 2024")
+    st.markdown("### Análisis de inscripciones de empleo para el año 2024.")
 
     # Filtrar los datos solo para la pestaña "Inscripciones"
     df_inscripciones = df[df['N_EMPRESA'].isnull()]
+
+    # Aplicar filtros de fechas
+    df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df_inscripciones['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
 
     # Filtros en la barra lateral
     st.sidebar.header("Filtros de Inscripciones")
@@ -67,28 +81,12 @@ with tab1:
         departamentos = df_inscripciones['N_DEPARTAMENTO'].unique()
         selected_departamento = st.sidebar.multiselect("Filtrar por Departamento", departamentos, default=departamentos)
 
-    # Aplicar filtros
+    # Aplicar filtros adicionales
     if 'N_LOCALIDAD' in df_inscripciones.columns:
         df_inscripciones = df_inscripciones[df_inscripciones['N_LOCALIDAD'].isin(selected_localidad)]
 
     if 'N_DEPARTAMENTO' in df_inscripciones.columns:
         df_inscripciones = df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin(selected_departamento)]
-
-    # Sección de fechas
-    col1, col2 = st.columns(2)
-    fecha_min = df_inscripciones['FEC_INSCRIPCION'].min().date() if not df_inscripciones['FEC_INSCRIPCION'].isnull().all() else None
-    fecha_max = df_inscripciones['FEC_INSCRIPCION'].max().date() if not df_inscripciones['FEC_INSCRIPCION'].isnull().all() else None
-
-    if fecha_min and fecha_max:
-        with col1:
-            fecha_inicio = st.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
-        with col2:
-            fecha_fin = st.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
-
-        # Filtrar los datos según el rango de fechas seleccionado
-        df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df_inscripciones['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
-    else:
-        st.error("No se pueden determinar todas las fechas en el archivo CSV.")
 
     # Gráficos predefinidos para inscripciones
     st.markdown("### Gráficos de Inscripciones")
@@ -139,6 +137,7 @@ with tab1:
                 use_container_width=True
             )
 
+# Pestaña de Empresas
 with tab2:
     st.title("Análisis de Empresas y Rubros")
     st.markdown("### Información sobre empresas y sus respectivos rubros.")
@@ -146,6 +145,12 @@ with tab2:
     # Filtrar los datos solo para la pestaña "Empresas"
     df_empresas = df[df['N_EMPRESA'].notnull()]
 
+    # Aplicar filtros de fechas
+    df_empresas = df_empresas[(df_empresas['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df_empresas['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
+
+    # Previsualización de datos
+    st.subheader("Previsualización de Datos de Empresas")
+    st.dataframe(df_empresas.head())
 
     # Gráficos predefinidos para empresas
     if not df_empresas.empty:
