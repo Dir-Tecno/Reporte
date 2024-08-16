@@ -76,6 +76,11 @@ with tab1:
     total_inscripciones = df_inscripciones.shape[0]
     st.markdown(f"**Conteo Total de Inscripciones:** {total_inscripciones}")
 
+    # Botón para mostrar inscripciones distintivas
+    if st.button("Mostrar Inscripciones Distintivas"):
+        inscripciones_unicas = df_inscripciones.drop_duplicates(subset=['ID_INSCRIPCION'])
+        st.dataframe(inscripciones_unicas)
+
     # Filtros en la barra lateral
     st.sidebar.header("Filtros de Inscripciones")
     if 'N_LOCALIDAD' in df_inscripciones.columns:
@@ -152,10 +157,12 @@ with tab2:
 
     # Conteo total de empresas
     total_empresas = df_empresas['CUIT'].nunique()
+    st.markdown(f"**Conteo Total de Empresas Adheridas:** {total_empresas}")
 
-    # Botón con el conteo distintivo de CUIT
-    st.markdown(f"**Conteo Distintivo de CUIT:**")
-    st.button(f"{total_empresas} Empresas Únicas")
+    # Botón para mostrar empresas distintivas
+    if st.button("Mostrar Empresas Distintivas"):
+        empresas_unicas = df_empresas.drop_duplicates(subset=['CUIT'])
+        st.dataframe(empresas_unicas)
 
     # Gráficos predefinidos para empresas
     if not df_empresas.empty:
@@ -171,9 +178,9 @@ with tab2:
 
         st.subheader("Recuento Distintivo de N_EMPRESA, CANTIDAD_EMPLEADOS y N_PUESTO_EMPLEO")
         st.altair_chart(
-            alt.Chart(df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS': 'sum'}).reset_index()).mark_arc().encode(
+            alt.Chart(df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS':'sum'}).reset_index()).mark_arc().encode(
                 theta=alt.Theta(field="CANTIDAD_EMPLEADOS", type="quantitative"),
-                color=alt.Color(field='N_EMPRESA', type="nominal"),
+                color=alt.Color(field='N_PUESTO_EMPLEO', type="nominal"),
                 tooltip=['N_EMPRESA', 'N_PUESTO_EMPLEO', 'CANTIDAD_EMPLEADOS']
             ).properties(width=600, height=400),
             use_container_width=True
