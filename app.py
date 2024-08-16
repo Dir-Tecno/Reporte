@@ -47,7 +47,7 @@ if df['FEC_INSCRIPCION'].isnull().any():
     st.error("Algunas fechas no pudieron ser convertidas. Verifica que todos los formatos de fecha en el archivo CSV sean consistentes.")
 
 with tab1:
-    st.title("Reporte de Inscripciones 2024")
+    st.title("Nueva  Oportunidad")
 
     # Filtrar los datos solo para la pestaña "Inscripciones"
     df_inscripciones = df[df['N_EMPRESA'].isnull()]
