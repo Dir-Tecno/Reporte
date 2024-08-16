@@ -77,7 +77,7 @@ with tab1:
     st.markdown(f"**Conteo Total de Inscripciones:** {total_inscripciones}")
 
     # Botón para mostrar inscripciones distintivas
-    if st.button("Mostrar Inscripciones Distintivas"):
+    if st.button("Mostrar Inscripciones"):
         inscripciones_unicas = df_inscripciones.drop_duplicates(subset=['ID_INSCRIPCION'])
         st.dataframe(inscripciones_unicas)
 
@@ -160,7 +160,7 @@ with tab2:
     st.markdown(f"**Conteo Total de Empresas Adheridas:** {total_empresas}")
 
     # Botón para mostrar empresas distintivas
-    if st.button("Mostrar Empresas Distintivas"):
+    if st.button("Mostrar Empresas"):
         empresas_unicas = df_empresas.drop_duplicates(subset=['CUIT'])
         st.dataframe(empresas_unicas)
 
