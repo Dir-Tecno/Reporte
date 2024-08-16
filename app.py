@@ -46,6 +46,10 @@ except Exception as e:
 if df['FEC_INSCRIPCION'].isnull().any():
     st.error("Algunas fechas no pudieron ser convertidas. Verifica que todos los formatos de fecha en el archivo CSV sean consistentes.")
 
+# Dividir el DataFrame en dos: uno para inscripciones y otro para empresas
+df_inscripciones = df[df['N_EMPRESA'].isnull()].copy()
+df_empresas = df[df['N_EMPRESA'].notnull()].copy()
+
 # Configuración de las pestañas
 tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
 
@@ -65,9 +69,6 @@ with tab1:
     st.title("Reporte de Inscripciones 2024")
     st.markdown("### Análisis de inscripciones de empleo para el año 2024.")
 
-    # Filtrar los datos solo para la pestaña "Inscripciones"
-    df_inscripciones = df[df['N_EMPRESA'].isnull()]
-
     # Aplicar filtros de fechas
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
         df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df_inscripciones['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
@@ -77,7 +78,7 @@ with tab1:
     st.markdown(f"**Conteo Total de Inscripciones:** {total_inscripciones}")
 
     # Botón para mostrar inscripciones distintivas
-    if st.button("Mostrar Inscripciones"):
+    if st.button("Mostrar Inscripciones Distintivas"):
         inscripciones_unicas = df_inscripciones.drop_duplicates(subset=['ID_INSCRIPCION'])
         st.dataframe(inscripciones_unicas)
 
@@ -152,15 +153,16 @@ with tab2:
     st.title("Análisis de Empresas y Rubros")
     st.markdown("### Información sobre empresas y sus respectivos rubros.")
 
-    # Filtrar los datos solo para la pestaña "Empresas"
-    df_empresas = df[df['N_EMPRESA'].notnull()]
+    # Aplicar filtros de fechas
+    if 'FEC_INSCRIPCION' in df_empresas.columns:
+        df_empresas = df_empresas[(df_empresas['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & (df_empresas['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
 
     # Conteo total de empresas
     total_empresas = df_empresas['CUIT'].nunique()
     st.markdown(f"**Conteo Total de Empresas Adheridas:** {total_empresas}")
 
     # Botón para mostrar empresas distintivas
-    if st.button("Mostrar Empresas"):
+    if st.button("Mostrar Empresas Distintivas"):
         empresas_unicas = df_empresas.drop_duplicates(subset=['CUIT'])
         st.dataframe(empresas_unicas)
 
@@ -176,7 +178,7 @@ with tab2:
             use_container_width=True
         )
 
-        st.subheader("Recuento Distintivo de N_EMPRESA, CANTIDAD_EMPLEADOS y N_PUESTO_EMPLEO")
+        st.subheader("Distribución de Empleados por Empresa y Puesto")
         st.altair_chart(
             alt.Chart(df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS':'sum'}).reset_index()).mark_arc().encode(
                 theta=alt.Theta(field="CANTIDAD_EMPLEADOS", type="quantitative"),
