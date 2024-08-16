@@ -141,6 +141,9 @@ with tab2:
     # Filtrar para el segundo CSV
     df_empresas = df[df['N_EMPRESA'].notnull()]
 
+    # Mostrar datos filtrados para depuración
+    st.write("Datos filtrados de empresas:", df_empresas.head())
+
     if not df_empresas.empty:
         # Recuento distintivo para N_EMPRESA y N_CATEGORIA_EMPLEO
         st.subheader("Recuento Distintivo por Rubro")
@@ -163,3 +166,4 @@ with tab2:
         st.altair_chart(pie_chart_empleados_puestos, use_container_width=True)
     else:
         st.error("No se encontraron datos de empresas para mostrar.")
+
