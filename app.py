@@ -110,15 +110,32 @@ if page == "Inscripciones":
         st.altair_chart(pie_chart_departamento, use_container_width=True)
 
     # DNI por Localidad (Barras)
-    if 'N_LOCALIDAD' in df.columns:
-        dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
-        st.subheader("Conteo de ID Inscripción por Localidad (Barras)")
-        bar_chart_localidad = alt.Chart(dni_por_localidad).mark_bar().encode(
-            x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-x'),
-            y=alt.Y('Conteo:Q', title='Conteo'),
-            color='N_LOCALIDAD:N'
-        ).properties(width=600, height=400)
-        st.altair_chart(bar_chart_localidad, use_container_width=True)
+if 'N_LOCALIDAD' in df.columns:
+    dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
+    st.subheader("Conteo de ID Inscripción por Localidad (Barras)")
+
+    # Gráfico de barras horizontales
+    bar_chart_localidad = alt.Chart(dni_por_localidad).mark_bar().encode(
+        y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
+        x=alt.X('Conteo:Q', title='Conteo'),
+        color='N_LOCALIDAD:N'
+    ).properties(width=600, height=400)
+
+    # Etiquetas de conteo en las barras
+    text = bar_chart_localidad.mark_text(
+        align='left',
+        baseline='middle',
+        dx=3  # Desplazamiento del texto a la derecha de las barras
+    ).encode(
+        text='Conteo:Q'
+    )
+
+    # Combinar el gráfico de barras con las etiquetas
+    final_chart = bar_chart_localidad + text
+
+    # Mostrar el gráfico en Streamlit
+    st.altair_chart(final_chart, use_container_width=True)
+
 
     # DNI por Localidad (Torta)
     if 'N_LOCALIDAD' in df.columns:
