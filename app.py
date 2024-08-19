@@ -40,7 +40,8 @@ df = load_data_from_bucket(blob_names, bucket_name)
 if 'FEC_INSCRIPCION' in df.columns:
     df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%d/%m/%Y %H:%M:%S', errors='coerce', dayfirst=True)
     if df['FEC_INSCRIPCION'].isnull().any():
-        st.error("Algunas fechas no pudieron ser convertidas. Verifica los formatos de fecha en el archivo CSV.")
+        pass
+        #st.error("Algunas fechas no pudieron ser convertidas. Verifica los formatos de fecha en el archivo CSV.")
 
 
 # Configuración de pestañas
