@@ -75,31 +75,57 @@ with tab1:
         ).properties(width=600, height=400)
         st.altair_chart(bar_chart_localidad, use_container_width=True)
 
+    # Gráficos predefinidos para inscripciones
     st.markdown("### Gráficos de Inscripciones")
-    departamentos = st.multiselect("Filtrar por Departamento", df_inscripciones['N_DEPARTAMENTO'].unique(), default=["CAPITAL", "RIO CUARTO"])
-    localidades = st.multiselect("Filtrar por Localidad", df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin(departamentos)]['N_LOCALIDAD'].unique(),default=["CORDOBA", "RIO CUARTO"])
 
-    df_filtered = df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin(departamentos) & df_inscripciones['N_LOCALIDAD'].isin(localidades)]
+     
+    # Filtros debajo del título
+    if 'N_DEPARTAMENTO' in df_inscripciones.columns:
+        departamentos = df_inscripciones['N_DEPARTAMENTO'].unique()
+        default_departamentos = ["CAPITAL", "RIO CUARTO"]
+        # Verificar si los valores predeterminados están en la lista de departamentos
+        default_departamentos = [dep for dep in default_departamentos if dep in departamentos]
+        selected_departamento = st.multiselect("Filtrar por Departamento", departamentos, default=default_departamentos)    
 
-    if not df_filtered.empty:
-        col1, col2 = st.columns(2)
+    # Filtrar el DataFrame según el Departamento seleccionado para obtener las localidades correspondientes
+    if 'N_LOCALIDAD' in df_inscripciones.columns and selected_departamento:
+        localidades = df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin(selected_departamento)]['N_LOCALIDAD'].unique()
+        selected_localidad = st.multiselect("Filtrar por Localidad", localidades, default=localidades)
+    else:
+        selected_localidad = [] 
+
+    # Filtrar el DataFrame basado en las selecciones
+    df_filtered = df_inscripciones[
+        (df_inscripciones['N_DEPARTAMENTO'].isin(selected_departamento)) & 
+        (df_inscripciones['N_LOCALIDAD'].isin(selected_localidad))
+    ]
+
+    # Gráficos que responden a los filtros
+    if 'N_DEPARTAMENTO' in df_filtered.columns:
         dni_por_departamento = df_filtered.groupby('N_DEPARTAMENTO').size().reset_index(name='Conteo')
-        dni_por_localidad = df_filtered.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
+        st.subheader("Conteo de ID Inscripción por Departamento")
 
+        col1, col2 = st.columns(2)
         with col1:
-            st.altair_chart(alt.Chart(dni_por_departamento).mark_arc().encode(
-                theta=alt.Theta(field="Conteo", type="quantitative"),
-                color=alt.Color(field='N_DEPARTAMENTO', type="nominal"),
-                tooltip=['N_DEPARTAMENTO', 'Conteo']
-            ).properties(width=300, height=300), use_container_width=True)
-
+            st.altair_chart(
+                alt.Chart(dni_por_departamento).mark_arc().encode(
+                    theta=alt.Theta(field="Conteo", type="quantitative"),
+                    color=alt.Color(field='N_DEPARTAMENTO', type="nominal"),
+                    tooltip=['N_DEPARTAMENTO', 'Conteo']
+                ).properties(width=300, height=300),
+                use_container_width=True    
+            )
+    if 'N_LOCALIDAD' in df_filtered.columns:
+        dni_por_localidad = df_filtered.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
         with col2:
-            st.altair_chart(alt.Chart(dni_por_localidad).mark_bar().encode(
-                x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-y'),
-                y=alt.Y('Conteo:Q', title='Conteo'),
-                color='N_LOCALIDAD:N'
-            ).properties(width=300, height=300), use_container_width=True)
-
+            st.altair_chart(
+                alt.Chart(dni_por_localidad).mark_bar().encode(
+                    x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-y'),
+                    y=alt.Y('Conteo:Q', title='Conteo'),
+                    color='N_LOCALIDAD:N'
+                ).properties(width=300, height=300),
+                use_container_width=True
+            )
 # Pestaña de Empresas
 with tab2:
     st.title("Análisis de Empresas y Rubros")
