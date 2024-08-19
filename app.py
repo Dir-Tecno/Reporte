@@ -109,7 +109,7 @@ with tab2:
     total_empresas = df_empresas['CUIT'].nunique()
     st.metric(label="Empresas Adheridas", value=total_empresas)
 
-    if st.button("Mostrar empresas distintivas"):
+    if st.button("Mostrar empresas"):
         st.write(df_empresas[['CUIT', 'N_EMPRESA', 'N_CATEGORIA_EMPLEO']].drop_duplicates())
 
     if not df_empresas.empty:
