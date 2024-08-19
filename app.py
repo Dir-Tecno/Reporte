@@ -67,7 +67,7 @@ with tab1:
 
     if 'N_LOCALIDAD' in df.columns:
         top_10_localidades = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo').sort_values(by='Conteo', ascending=False).head(10)
-        st.subheader("Top 10 de ID Inscripción por Localidad (Barras)")
+        st.subheader("Adherentes por Localidad")
         bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
             y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
             x=alt.X('Conteo:Q', title='Conteo'),
