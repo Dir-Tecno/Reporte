@@ -4,7 +4,6 @@ import altair as alt
 import tempfile
 from google.cloud import storage
 from google.oauth2 import service_account
-import datetime
 
 # Configura las credenciales de Google Cloud
 credentials_info = st.secrets["GOOGLE_APPLICATION_CREDENTIALS_JSON"]
@@ -40,24 +39,10 @@ df = load_data_from_bucket(blob_names, bucket_name)
 # Convertir las fechas
 if 'FEC_INSCRIPCION' in df.columns:
     df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], dayfirst=True)
+    if df['FEC_INSCRIPCION'].isnull().any():
+        pass
+        #st.error("Algunas fechas no pudieron ser convertidas. Verifica los formatos de fecha en el archivo CSV.")
 
-# Función para calcular la edad en base a la fecha de nacimiento
-def calcular_edad(fecha_nacimiento):
-    hoy = datetime.date.today() - datetime.timedelta(days=1)  # Día de ayer
-    return hoy.year - fecha_nacimiento.year - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
-
-# Convertir la columna FEC_NACIMIENTO a tipo datetime si no lo está
-if 'FEC_NACIMIENTO' in df.columns:
-    df['FEC_NACIMIENTO'] = pd.to_datetime(df['FEC_NACIMIENTO'], dayfirst=True)
-    df['EDAD'] = df['FEC_NACIMIENTO'].apply(calcular_edad)
-
-    # Filtrar personas de 26 años o más
-    df_26_mas = df[df['EDAD'] >= 26]
-    total_26_mas = df_26_mas.shape[0]
-
-    # Filtrar personas de 45 años o más
-    df_45_mas = df[df['EDAD'] >= 45]
-    total_45_mas = df_45_mas.shape[0]
 
 # Configuración de pestañas
 tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
@@ -80,37 +65,40 @@ with tab1:
     total_inscripciones = df_inscripciones.shape[0]
     st.metric(label="Adhesiones", value=total_inscripciones)
 
-    # DNI por Localidad (Barras)
-    if 'N_LOCALIDAD' in df.columns:
-        dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
+        # DNI por Localidad (Barras)
+if 'N_LOCALIDAD' in df.columns:
+    dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
 
-        # Ordenar por conteo en orden descendente y seleccionar los 10 primeros
-        top_10_localidades = dni_por_localidad.sort_values(by='Conteo', ascending=False).head(10)
-        
-        st.subheader("Top 10 de ID Inscripción por Localidad (Barras)")
+    # Ordenar por conteo en orden descendente y seleccionar los 10 primeros
+    top_10_localidades = dni_por_localidad.sort_values(by='Conteo', ascending=False).head(10)
+    
+    st.subheader("Top 10 de ID Inscripción por Localidad (Barras)")
 
-        # Gráfico de barras horizontales
-        bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
-            y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
-            x=alt.X('Conteo:Q', title='Conteo'),
-            color=alt.Color('N_LOCALIDAD:N', legend=None)  # Se elimina la leyenda
-        ).properties(width=600, height=400)
+    # Gráfico de barras horizontales
+    bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
+        y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
+        x=alt.X('Conteo:Q', title='Conteo'),
+        color=alt.Color('N_LOCALIDAD:N', legend=None)  # Se elimina la leyenda
+    ).properties(width=600, height=400)
 
-        # Etiquetas de conteo en las barras
-        text = bar_chart_localidad.mark_text(
-            align='left',
-            baseline='middle',
-            dx=3  # Desplazamiento del texto a la derecha de las barras
-        ).encode(
-            text='Conteo:Q'
-        )
+    # Etiquetas de conteo en las barras
+    text = bar_chart_localidad.mark_text(
+        align='left',
+        baseline='middle',
+        dx=3  # Desplazamiento del texto a la derecha de las barras
+    ).encode(
+        text='Conteo:Q'
+    )
 
-        # Combinar el gráfico de barras con las etiquetas
-        final_chart = bar_chart_localidad + text
+    # Combinar el gráfico de barras con las etiquetas
+    final_chart = bar_chart_localidad + text
 
-        # Mostrar el gráfico en Streamlit
-        st.altair_chart(final_chart, use_container_width=True)
+    # Mostrar el gráfico en Streamlit
+    st.altair_chart(final_chart, use_container_width=True)
+    # Gráficos predefinidos para inscripciones
+    st.markdown("### Gráficos de Inscripciones")
 
+     
     # Filtros debajo del título
     if 'N_DEPARTAMENTO' in df_inscripciones.columns:
         departamentos = df_inscripciones['N_DEPARTAMENTO'].unique()
@@ -158,17 +146,6 @@ with tab1:
                 ).properties(width=300, height=300),
                 use_container_width=True
             )
-
-    # Botones para mostrar conteos por edad
-    if 'FEC_NACIMIENTO' in df.columns:
-        if st.button("Personas de 26 o más años"):
-            st.write(f"Total de personas de 26 años o más: {total_26_mas}")
-            st.write(df_26_mas[['CUIT', 'N_EMPRESA', 'N_PUESTO_EMPLEO', 'N_CATEGORIA_EMPLEO']].drop_duplicates())
-
-        if st.button("Personas de 45 o más años"):
-            st.write(f"Total de personas de 45 años o más: {total_45_mas}")
-            st.write(df_45_mas[['CUIT', 'N_EMPRESA', 'N_PUESTO_EMPLEO', 'N_CATEGORIA_EMPLEO']].drop_duplicates())
-
 # Pestaña de Empresas
 with tab2:
     st.title("Análisis de Empresas y Rubros")
@@ -197,4 +174,4 @@ with tab2:
             height=400
         )
 
-        st.altair_chart(stacked_bar_chart_2, use_container_width=True) 
+        st.altair_chart(stacked_bar_chart_2, use_container_width=True)
