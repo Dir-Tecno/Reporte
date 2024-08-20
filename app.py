@@ -78,7 +78,7 @@ if 'N_LOCALIDAD' in df.columns:
     bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
         y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
         x=alt.X('Conteo:Q', title='Conteo'),
-        color='N_LOCALIDAD:N'
+        color=alt.Color('N_LOCALIDAD:N', legend=None)  # Se elimina la leyenda
     ).properties(width=600, height=400)
 
     # Etiquetas de conteo en las barras
