@@ -156,7 +156,7 @@ with tab2:
     st.metric(label="Empresas Adheridas", value=total_empresas)
 
     if st.button("Mostrar empresas"):
-        st.write(df_empresas[['CUIT', 'N_EMPRESA', 'N_CATEGORIA_EMPLEO']].drop_duplicates())
+        st.write(df_empresas[['CUIT', 'N_EMPRESA','N_PUESTO_EMPLEO','N_CATEGORIA_EMPLEO']].drop_duplicates())
 
     if not df_empresas.empty:
         st.subheader("Recuento Distintivo de N_EMPRESA por N_CATEGORIA_EMPLEO")
