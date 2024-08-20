@@ -159,16 +159,19 @@ with tab2:
         st.write(df_empresas[['CUIT', 'N_EMPRESA','N_PUESTO_EMPLEO','N_CATEGORIA_EMPLEO']].drop_duplicates())
 
     if not df_empresas.empty:
-        st.subheader("Recuento Distintivo de N_EMPRESA por N_CATEGORIA_EMPLEO")
-        st.altair_chart(alt.Chart(df_empresas.groupby(['N_EMPRESA', 'N_CATEGORIA_EMPLEO']).size().reset_index(name='Conteo')).mark_arc().encode(
-            theta=alt.Theta(field="Conteo", type="quantitative"),
-            color=alt.Color(field='N_CATEGORIA_EMPLEO', type="nominal"),
-            tooltip=['N_EMPRESA', 'N_CATEGORIA_EMPLEO', 'Conteo']
-        ).properties(width=600, height=400), use_container_width=True)
-
         st.subheader("Distribución de Empleados por Empresa y Puesto")
-        st.altair_chart(alt.Chart(df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS':'sum'}).reset_index()).mark_arc().encode(
-            theta=alt.Theta(field="CANTIDAD_EMPLEADOS", type="quantitative"),
-            color=alt.Color(field='N_PUESTO_EMPLEO', type="nominal"),
+
+        # Agrupar los datos y generar el gráfico de barras apiladas
+        df_puesto_agg = df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS':'sum'}).reset_index()
+
+        stacked_bar_chart_2 = alt.Chart(df_puesto_agg).mark_bar().encode(
+            x=alt.X('CANTIDAD_EMPLEADOS:Q', title='Cantidad de Empleados'),
+            y=alt.Y('N_EMPRESA:N', title='Empresa', sort='-x'),
+            color=alt.Color('N_PUESTO_EMPLEO:N', title='Puesto de Empleo'),
             tooltip=['N_EMPRESA', 'N_PUESTO_EMPLEO', 'CANTIDAD_EMPLEADOS']
-        ).properties(width=600, height=400), use_container_width=True)
+        ).properties(
+            width=600,
+            height=400
+        )
+
+        st.altair_chart(stacked_bar_chart_2, use_container_width=True)
