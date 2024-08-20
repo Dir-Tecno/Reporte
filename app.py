@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 import tempfile
+from datetime import timedelta
 from google.cloud import storage
 from google.oauth2 import service_account
 
@@ -9,7 +10,6 @@ from google.oauth2 import service_account
 credentials_info = st.secrets["GOOGLE_APPLICATION_CREDENTIALS_JSON"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
-# Función para descargar el archivo desde el bucket de Google Cloud
 # Función para descargar el archivo desde el bucket de Google Cloud y obtener la fecha de modificación
 def download_from_bucket(blob_name, bucket_name):
     storage_client = storage.Client(credentials=credentials)
@@ -22,7 +22,7 @@ def download_from_bucket(blob_name, bucket_name):
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
         blob.download_to_filename(temp_file.name)
-        return temp_file.name, file_date
+        return temp_file.name, file_date - timedelta(hours=3)
 
 
 # Función para cargar y procesar datos, y retornar la fecha de los archivos
@@ -33,7 +33,7 @@ def load_data_from_bucket(blob_names, bucket_name):
     for blob_name in blob_names:
         temp_file_name, file_date = download_from_bucket(blob_name, bucket_name)
         # Especificar tipos de datos para evitar advertencias
-        df = pd.read_csv(temp_file_name, dtype={'column_29': 'str', 'column_30': 'str', 'column_31': 'str', 'column_32': 'str'}, low_memory=False)
+        df = pd.read_csv(temp_file_name, low_memory=False)
         dfs.append(df)
         file_dates.append(file_date)  # Almacenar la fecha de modificación
     
@@ -161,16 +161,17 @@ if 'N_LOCALIDAD' in df.columns:
             )
 # Pestaña de Empresas
 with tab2:
-    st.title("Análisis de Empresas y Rubros")
     st.markdown("### Información sobre empresas y sus respectivos rubros.")
+    st.write(f"Datos del archivo actualizados al: {file_dates[1].strftime('%d/%m/%Y %H:%M:%S')}")
+
 
     df_empresas = df[df['N_EMPRESA'].notnull()]
     total_empresas = df_empresas['CUIT'].nunique()
     st.metric(label="Empresas Adheridas", value=total_empresas)
 
     if st.button("Mostrar empresas"):
-        st.write(df_empresas[['CUIT', 'N_EMPRESA','N_PUESTO_EMPLEO','N_CATEGORIA_EMPLEO']].drop_duplicates())
-
+        #st.write(df_empresas[['N_EMPRESA','CANTIDAD_EMPLEADOS','N_PUESTO_EMPLEO','N_CATEGORIA_EMPLEO']].drop_duplicates())
+        st.write(df_empresas[['N_EMPRESA','CANTIDAD_EMPLEADOS']].drop_duplicates().reset_index(drop=True))
     if not df_empresas.empty:
         st.subheader("Distribución de Empleados por Empresa y Puesto")
 
