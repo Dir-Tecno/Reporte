@@ -33,12 +33,12 @@ st.set_page_config(page_title="Reporte Ejecutivo de Empleo", layout="wide")
 
 # Descargar y procesar los datos
 bucket_name = "direccion"
-blob_names = ["vt_inscripciones_empleo.csv", "SQL_EMPRESAS_ADHERIDAS.csv"]
+blob_names = ["vt_inscripciones_empleo.csv", "vt_empresas_adheridas.csv"]
 df = load_data_from_bucket(blob_names, bucket_name)
 
 # Convertir las fechas
 if 'FEC_INSCRIPCION' in df.columns:
-    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%d/%m/%Y %H:%M:%S', errors='coerce', dayfirst=True)
+    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], dayfirst=True)
     if df['FEC_INSCRIPCION'].isnull().any():
         pass
         #st.error("Algunas fechas no pudieron ser convertidas. Verifica los formatos de fecha en el archivo CSV.")
@@ -95,8 +95,7 @@ if 'N_LOCALIDAD' in df.columns:
 
     # Mostrar el gráfico en Streamlit
     st.altair_chart(final_chart, use_container_width=True)
-    
-
+    # Gráficos predefinidos para inscripciones
     st.markdown("### Gráficos de Inscripciones")
 
      
@@ -160,20 +159,16 @@ with tab2:
         st.write(df_empresas[['CUIT', 'N_EMPRESA','N_PUESTO_EMPLEO','N_CATEGORIA_EMPLEO']].drop_duplicates())
 
     if not df_empresas.empty:
-        # Primer gráfico: Recuento Distintivo de N_EMPRESA por N_PUESTO_EMPLEO
-        st.subheader("Recuento Distintivo de N_EMPRESA por N_PUESTO_EMPLEO")
-        
-        # Agrupar los datos y generar el gráfico de barras apiladas
-        df_empresas_agg = df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).size().reset_index(name='Conteo')
-        
-        stacked_bar_chart_1 = alt.Chart(df_empresas_agg).mark_bar().encode(
-            x=alt.X('Conteo:Q', title='Conteo'),
-            y=alt.Y('N_EMPRESA:N', title='Empresa', sort='-x'),
-            color=alt.Color('N_PUESTO_EMPLEO:N', title='Puestos'),
-            tooltip=['N_EMPRESA', 'N_PUESTO_EMPLEO', 'Conteo']
-        ).properties(
-            width=600,
-            height=400
-        )
-        
-        st.altair_chart(stacked_bar_chart_1, use_container_width=True)
+        st.subheader("Recuento Distintivo de N_EMPRESA por N_CATEGORIA_EMPLEO")
+        st.altair_chart(alt.Chart(df_empresas.groupby(['N_EMPRESA', 'N_CATEGORIA_EMPLEO']).size().reset_index(name='Conteo')).mark_arc().encode(
+            theta=alt.Theta(field="Conteo", type="quantitative"),
+            color=alt.Color(field='N_CATEGORIA_EMPLEO', type="nominal"),
+            tooltip=['N_EMPRESA', 'N_CATEGORIA_EMPLEO', 'Conteo']
+        ).properties(width=600, height=400), use_container_width=True)
+
+        st.subheader("Distribución de Empleados por Empresa y Puesto")
+        st.altair_chart(alt.Chart(df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS':'sum'}).reset_index()).mark_arc().encode(
+            theta=alt.Theta(field="CANTIDAD_EMPLEADOS", type="quantitative"),
+            color=alt.Color(field='N_PUESTO_EMPLEO', type="nominal"),
+            tooltip=['N_EMPRESA', 'N_PUESTO_EMPLEO', 'CANTIDAD_EMPLEADOS']
+        ).properties(width=600, height=400), use_container_width=True)
