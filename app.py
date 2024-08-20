@@ -33,12 +33,12 @@ st.set_page_config(page_title="Reporte Ejecutivo de Empleo", layout="wide")
 
 # Descargar y procesar los datos
 bucket_name = "direccion"
-blob_names = ["vt_inscripciones_empleo.csv", "SQL_EMPRESAS_ADHERIDAS.csv"]
+blob_names = ["vt_inscripciones_empleo.csv", "vt_empresas_adheridas.csv"]
 df = load_data_from_bucket(blob_names, bucket_name)
 
 # Convertir las fechas
 if 'FEC_INSCRIPCION' in df.columns:
-    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], format='%d/%m/%Y %H:%M:%S', errors='coerce', dayfirst=True)
+    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], dayfirst=True)
     if df['FEC_INSCRIPCION'].isnull().any():
         pass
         #st.error("Algunas fechas no pudieron ser convertidas. Verifica los formatos de fecha en el archivo CSV.")
