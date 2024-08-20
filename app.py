@@ -10,23 +10,36 @@ credentials_info = st.secrets["GOOGLE_APPLICATION_CREDENTIALS_JSON"]
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 
 # Función para descargar el archivo desde el bucket de Google Cloud
+# Función para descargar el archivo desde el bucket de Google Cloud y obtener la fecha de modificación
 def download_from_bucket(blob_name, bucket_name):
     storage_client = storage.Client(credentials=credentials)
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
+    
+    # Obtener la fecha de última modificación del archivo
+    blob.reload()  # Asegúrate de recargar los metadatos del blob
+    file_date = blob.updated  # Esta es la fecha de modificación del archivo
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
         blob.download_to_filename(temp_file.name)
-        return temp_file.name
+        return temp_file.name, file_date
 
-# Función para cargar y procesar datos
+
+# Función para cargar y procesar datos, y retornar la fecha de los archivos
 def load_data_from_bucket(blob_names, bucket_name):
     dfs = []
+    file_dates = []  # Lista para almacenar las fechas de modificación de los archivos
+    
     for blob_name in blob_names:
-        temp_file_name = download_from_bucket(blob_name, bucket_name)
+        temp_file_name, file_date = download_from_bucket(blob_name, bucket_name)
         # Especificar tipos de datos para evitar advertencias
         df = pd.read_csv(temp_file_name, dtype={'column_29': 'str', 'column_30': 'str', 'column_31': 'str', 'column_32': 'str'}, low_memory=False)
         dfs.append(df)
-    return pd.concat(dfs, ignore_index=True)
+        file_dates.append(file_date)  # Almacenar la fecha de modificación
+    
+    combined_df = pd.concat(dfs, ignore_index=True)
+    return combined_df, file_dates
+
 
 # Configuración de la aplicación
 st.set_page_config(page_title="Reporte Ejecutivo de Empleo", layout="wide")
@@ -34,7 +47,7 @@ st.set_page_config(page_title="Reporte Ejecutivo de Empleo", layout="wide")
 # Descargar y procesar los datos
 bucket_name = "direccion"
 blob_names = ["vt_inscripciones_empleo.csv", "vt_empresas_adheridas.csv"]
-df = load_data_from_bucket(blob_names, bucket_name)
+df, file_dates = load_data_from_bucket(blob_names, bucket_name)
 
 # Convertir las fechas
 if 'FEC_INSCRIPCION' in df.columns:
@@ -49,8 +62,8 @@ tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
 
 # Pestaña de Inscripciones
 with tab1:
-    st.title("Reporte de Inscripciones 2024")
     st.markdown("### Inscripciones Programas Empleo 2024")
+    st.write(f"Datos del archivo actualizados al: {file_dates[0].strftime('%d/%m/%Y %H:%M:%S')}")
 
     df_inscripciones = df[df['N_EMPRESA'].isnull()]
 
