@@ -65,16 +65,36 @@ with tab1:
     total_inscripciones = df_inscripciones.shape[0]
     st.metric(label="Adhesiones", value=total_inscripciones)
 
-    if 'N_LOCALIDAD' in df.columns:
-        top_10_localidades = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo').sort_values(by='Conteo', ascending=False).head(10)
-        st.subheader("Adherentes por Localidad")
-        bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
-            y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
-            x=alt.X('Conteo:Q', title='Conteo'),
-            color='N_LOCALIDAD:N'
-        ).properties(width=600, height=400)
-        st.altair_chart(bar_chart_localidad, use_container_width=True)
+        # DNI por Localidad (Barras)
+if 'N_LOCALIDAD' in df.columns:
+    dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
 
+    # Ordenar por conteo en orden descendente y seleccionar los 10 primeros
+    top_10_localidades = dni_por_localidad.sort_values(by='Conteo', ascending=False).head(10)
+    
+    st.subheader("Top 10 de ID Inscripción por Localidad (Barras)")
+
+    # Gráfico de barras horizontales
+    bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
+        y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
+        x=alt.X('Conteo:Q', title='Conteo'),
+        color='N_LOCALIDAD:N'
+    ).properties(width=600, height=400)
+
+    # Etiquetas de conteo en las barras
+    text = bar_chart_localidad.mark_text(
+        align='left',
+        baseline='middle',
+        dx=3  # Desplazamiento del texto a la derecha de las barras
+    ).encode(
+        text='Conteo:Q'
+    )
+
+    # Combinar el gráfico de barras con las etiquetas
+    final_chart = bar_chart_localidad + text
+
+    # Mostrar el gráfico en Streamlit
+    st.altair_chart(final_chart, use_container_width=True)
     # Gráficos predefinidos para inscripciones
     st.markdown("### Gráficos de Inscripciones")
 
