@@ -79,35 +79,46 @@ with tab1:
     st.metric(label="Adhesiones", value=total_inscripciones)
 
         # DNI por Localidad (Barras)
-if 'N_LOCALIDAD' in df.columns:
-    dni_por_localidad = df.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
-
-    # Ordenar por conteo en orden descendente y seleccionar los 10 primeros
-    top_10_localidades = dni_por_localidad.sort_values(by='Conteo', ascending=False).head(10)
+    if 'N_LOCALIDAD' in df.columns and 'N_DEPARTAMENTO' in df.columns:
+        # Agrupar por N_LOCALIDAD y N_DEPARTAMENTO
+        dni_por_localidad = df.groupby(['N_LOCALIDAD', 'N_DEPARTAMENTO']).size().reset_index(name='Conteo')
+        
+        # Reemplazar N_DEPARTAMENTO: todo lo que no es "CAPITAL" se convierte en "INTERIOR"
+        dni_por_localidad['N_DEPARTAMENTO'] = dni_por_localidad['N_DEPARTAMENTO'].apply(lambda x: 'INTERIOR' if x != 'CAPITAL' else 'CAPITAL')
     
-    st.subheader("Top 10 de ID Inscripción por Localidad (Barras)")
+        # Crear un filtro de selección entre "CAPITAL" e "INTERIOR"
+        dni_por_localidad_filter = st.multiselect("Filtrar por Región", dni_por_localidad['N_DEPARTAMENTO'].unique(), default=dni_por_localidad['N_DEPARTAMENTO'].unique())
+    
+        # Filtrar los datos según la selección del filtro
+        dni_por_localidad = dni_por_localidad[dni_por_localidad['N_DEPARTAMENTO'].isin(dni_por_localidad_filter)]
+    
+        # Ordenar por conteo en orden descendente y seleccionar los 10 primeros
+        top_10_localidades = dni_por_localidad.sort_values(by='Conteo', ascending=False).head(10)
+        
+        st.subheader("Top 10 de ID Inscripción por Localidad (Barras)")
+    
+        # Gráfico de barras horizontales
+        bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
+            y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
+            x=alt.X('Conteo:Q', title='Conteo'),
+            color=alt.Color('N_LOCALIDAD:N', legend=None)  # Se elimina la leyenda
+        ).properties(width=600, height=400)
+    
+        # Etiquetas de conteo en las barras
+        text = bar_chart_localidad.mark_text(
+            align='left',
+            baseline='middle',
+            dx=3  # Desplazamiento del texto a la derecha de las barras
+        ).encode(
+            text='Conteo:Q'
+        )
+    
+        # Combinar el gráfico de barras con las etiquetas
+        final_chart = bar_chart_localidad + text
+    
+        # Mostrar el gráfico en Streamlit
+        st.altair_chart(final_chart, use_container_width=True)
 
-    # Gráfico de barras horizontales
-    bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
-        y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
-        x=alt.X('Conteo:Q', title='Conteo'),
-        color=alt.Color('N_LOCALIDAD:N', legend=None)  # Se elimina la leyenda
-    ).properties(width=600, height=400)
-
-    # Etiquetas de conteo en las barras
-    text = bar_chart_localidad.mark_text(
-        align='left',
-        baseline='middle',
-        dx=3  # Desplazamiento del texto a la derecha de las barras
-    ).encode(
-        text='Conteo:Q'
-    )
-
-    # Combinar el gráfico de barras con las etiquetas
-    final_chart = bar_chart_localidad + text
-
-    # Mostrar el gráfico en Streamlit
-    st.altair_chart(final_chart, use_container_width=True)
     # Gráficos predefinidos para inscripciones
     st.markdown("### Gráficos de Inscripciones")
 
