@@ -82,28 +82,28 @@ with tab1:
     if 'N_LOCALIDAD' in df.columns and 'N_DEPARTAMENTO' in df.columns:
         # Agrupar por N_LOCALIDAD y N_DEPARTAMENTO
         dni_por_localidad = df.groupby(['N_LOCALIDAD', 'N_DEPARTAMENTO']).size().reset_index(name='Conteo')
-        
+
         # Reemplazar N_DEPARTAMENTO: todo lo que no es "CAPITAL" se convierte en "INTERIOR"
         dni_por_localidad['N_DEPARTAMENTO'] = dni_por_localidad['N_DEPARTAMENTO'].apply(lambda x: 'INTERIOR' if x != 'CAPITAL' else 'CAPITAL')
-    
+
         # Crear un filtro de selección entre "CAPITAL" e "INTERIOR"
         dni_por_localidad_filter = st.multiselect("Filtrar por Región", dni_por_localidad['N_DEPARTAMENTO'].unique(), default=dni_por_localidad['N_DEPARTAMENTO'].unique())
-    
+
         # Filtrar los datos según la selección del filtro
         dni_por_localidad = dni_por_localidad[dni_por_localidad['N_DEPARTAMENTO'].isin(dni_por_localidad_filter)]
-    
+
         # Ordenar por conteo en orden descendente y seleccionar los 10 primeros
         top_10_localidades = dni_por_localidad.sort_values(by='Conteo', ascending=False).head(10)
-        
-        st.subheader("Top 10 de ID Inscripción por Localidad (Barras)")
-    
+
+        st.subheader("Top 10 de Adhesiones por Localidad")
+
         # Gráfico de barras horizontales
         bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
             y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
             x=alt.X('Conteo:Q', title='Conteo'),
             color=alt.Color('N_LOCALIDAD:N', legend=None)  # Se elimina la leyenda
         ).properties(width=600, height=400)
-    
+
         # Etiquetas de conteo en las barras
         text = bar_chart_localidad.mark_text(
             align='left',
@@ -112,15 +112,15 @@ with tab1:
         ).encode(
             text='Conteo:Q'
         )
-    
+
         # Combinar el gráfico de barras con las etiquetas
         final_chart = bar_chart_localidad + text
-    
+
         # Mostrar el gráfico en Streamlit
         st.altair_chart(final_chart, use_container_width=True)
 
     # Gráficos predefinidos para inscripciones
-    st.markdown("### Gráficos de Inscripciones")
+    st.markdown("### Gráficos de Inscripciones por departamentos")
 
      
     # Filtros debajo del título
@@ -147,32 +147,31 @@ with tab1:
     # Gráficos que responden a los filtros
     if 'N_DEPARTAMENTO' in df_filtered.columns:
         dni_por_departamento = df_filtered.groupby('N_DEPARTAMENTO').size().reset_index(name='Conteo')
-        st.subheader("Conteo de ID Inscripción por Departamento")
+        st.subheader("Conteo de Adhesiones por Departamento")
 
         col1, col2 = st.columns(2)
         with col1:
             st.altair_chart(
-                alt.Chart(dni_por_departamento).mark_arc().encode(
-                    theta=alt.Theta(field="Conteo", type="quantitative"),
-                    color=alt.Color(field='N_DEPARTAMENTO', type="nominal"),
-                    tooltip=['N_DEPARTAMENTO', 'Conteo']
-                ).properties(width=300, height=300),
-                use_container_width=True    
-            )
+            alt.Chart(dni_por_departamento).mark_bar().encode(
+                y=alt.Y('N_DEPARTAMENTO:N', title='Departamento', sort='-x'),
+                x=alt.X('Conteo:Q', title='Conteo'),
+                color=alt.Color('N_DEPARTAMENTO:N', legend=None),  # Se elimina la leyenda si no es necesaria
+                tooltip=['N_DEPARTAMENTO', 'Conteo']
+            ).properties(
+                width=300,
+                height=300
+            ),
+            use_container_width=True    
+        )
+
     if 'N_LOCALIDAD' in df_filtered.columns:
         dni_por_localidad = df_filtered.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
         with col2:
-            st.altair_chart(
-                alt.Chart(dni_por_localidad).mark_bar().encode(
-                    x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-y'),
-                    y=alt.Y('Conteo:Q', title='Conteo'),
-                    color='N_LOCALIDAD:N'
-                ).properties(width=300, height=300),
-                use_container_width=True
-            )
+            st.table(dni_por_localidad.pivot_table(index='N_LOCALIDAD', columns='N_DEPARTAMENTO', values='Conteo', fill_value=0))
+
 # Pestaña de Empresas
 with tab2:
-    st.markdown("### Información sobre empresas y sus respectivos rubros.")
+    st.markdown("### Información sobre empresas y puestos solicitados.")
     st.write(f"Datos del archivo actualizados al: {file_dates[1].strftime('%d/%m/%Y %H:%M:%S')}")
 
 
