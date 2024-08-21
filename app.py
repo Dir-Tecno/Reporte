@@ -51,11 +51,9 @@ df, file_dates = load_data_from_bucket(blob_names, bucket_name)
 
 # Convertir las fechas
 if 'FEC_INSCRIPCION' in df.columns:
-    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'], dayfirst=True)
-    if df['FEC_INSCRIPCION'].isnull().any():
-        pass
-        #st.error("Algunas fechas no pudieron ser convertidas. Verifica los formatos de fecha en el archivo CSV.")
-
+    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'])
+if 'FEC_NACIMIENTO' in df.columns:
+    df['FEC_NACIMIENTO'] = pd.to_datetime(df['FEC_NACIMIENTO'])
 
 # Configuración de pestañas
 tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
@@ -75,10 +73,39 @@ with tab1:
         df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & 
                                             (df_inscripciones['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
 
-    total_inscripciones = df_inscripciones.shape[0]
-    st.metric(label="Adhesiones", value=total_inscripciones)
+    # Calcular edades
+    df_inscripciones['Edad'] = (pd.Timestamp('2024-08-19') - df_inscripciones['FEC_NACIMIENTO']).dt.days // 365
 
-        # DNI por Localidad (Barras)
+    # Calcular el total de adhesiones
+    total_inscripciones = df_inscripciones.shape[0]
+
+    # Calcular el conteo de personas de 26 años o menos
+    count_26_or_less = df_inscripciones[df_inscripciones['Edad'] <= 26].shape[0]
+
+    # Calcular el conteo de personas entre 27 y 44 años
+    count_26_44 = df_inscripciones[(df_inscripciones['Edad'] > 26) & (df_inscripciones['Edad'] < 45)].shape[0]
+
+    # Calcular el conteo de personas de 45 años o más
+    count_45 = df_inscripciones[df_inscripciones['Edad'] >= 45].shape[0]
+
+    # Validar si los conteos suman el total de adhesiones
+    sum_edades = count_26_or_less + count_26_44 + count_45
+
+    # Mostrar las métricas en columnas
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric(label="Adhesiones", value=total_inscripciones)
+    with col2:
+        st.metric(label="26 años o menos", value=count_26_or_less)
+    with col3:
+        st.metric(label="Entre 26 y 44 años", value=count_26_44)   
+    with col4:
+        st.metric(label="45 años o más", value=count_45)
+
+    # Separador
+    st.markdown("###")
+
+    # DNI por Localidad (Barras)
     if 'N_LOCALIDAD' in df.columns and 'N_DEPARTAMENTO' in df.columns:
         # Agrupar por N_LOCALIDAD y N_DEPARTAMENTO
         dni_por_localidad = df.groupby(['N_LOCALIDAD', 'N_DEPARTAMENTO']).size().reset_index(name='Conteo')
@@ -120,80 +147,66 @@ with tab1:
         st.altair_chart(final_chart, use_container_width=True)
 
     # Gráficos predefinidos para inscripciones
-    st.markdown("### Gráficos de Inscripciones por departamentos")
+    st.markdown("### Gráficos de Inscripciones por Departamentos")
 
-     
     # Filtros debajo del título
     if 'N_DEPARTAMENTO' in df_inscripciones.columns:
         departamentos = df_inscripciones['N_DEPARTAMENTO'].unique()
-        default_departamentos = ["CAPITAL", "RIO CUARTO"]
-        # Verificar si los valores predeterminados están en la lista de departamentos
-        default_departamentos = [dep for dep in default_departamentos if dep in departamentos]
-        selected_departamento = st.multiselect("Filtrar por Departamento", departamentos, default=default_departamentos)    
-
-    # Filtrar el DataFrame según el Departamento seleccionado para obtener las localidades correspondientes
-    if 'N_LOCALIDAD' in df_inscripciones.columns and selected_departamento:
-        localidades = df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin(selected_departamento)]['N_LOCALIDAD'].unique()
-        selected_localidad = st.multiselect("Filtrar por Localidad", localidades, default=localidades)
+        selected_departamento = st.multiselect("Filtrar por Departamento", departamentos, default=departamentos)
+        df_filtered_departamentos = df_inscripciones[
+            df_inscripciones['N_DEPARTAMENTO'].isin(selected_departamento)
+        ]
     else:
-        selected_localidad = [] 
+        df_filtered_departamentos = df_inscripciones
 
-    # Filtrar el DataFrame basado en las selecciones
-    df_filtered = df_inscripciones[
-        (df_inscripciones['N_DEPARTAMENTO'].isin(selected_departamento)) & 
-        (df_inscripciones['N_LOCALIDAD'].isin(selected_localidad))
-    ]
+    # Agrupar y contar los datos
+    departamento_counts = df_filtered_departamentos.groupby(['N_DEPARTAMENTO', 'N_LOCALIDAD']).size().reset_index(name='Conteo de ID_INSCRIPCION')
 
-    # Gráficos que responden a los filtros
-    if 'N_DEPARTAMENTO' in df_filtered.columns:
-        dni_por_departamento = df_filtered.groupby('N_DEPARTAMENTO').size().reset_index(name='Conteo')
-        st.subheader("Conteo de Adhesiones por Departamento")
+    # Ordenar la tabla en orden descendente por 'Conteo de ID_INSCRIPCION'
+    departamento_counts_sorted = departamento_counts.sort_values(by='Conteo de ID_INSCRIPCION', ascending=False)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.altair_chart(
-            alt.Chart(dni_por_departamento).mark_bar().encode(
+    # Mostrar el gráfico y la tabla
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        st.subheader("Conteo por Departamento")
+        st.altair_chart(
+            alt.Chart(departamento_counts_sorted).mark_bar().encode(
                 y=alt.Y('N_DEPARTAMENTO:N', title='Departamento', sort='-x'),
-                x=alt.X('Conteo:Q', title='Conteo'),
-                color=alt.Color('N_DEPARTAMENTO:N', legend=None),  # Se elimina la leyenda si no es necesaria
-                tooltip=['N_DEPARTAMENTO', 'Conteo']
+                x=alt.X('Conteo de ID_INSCRIPCION:Q', title='Conteo'),
+                color=alt.Color('N_DEPARTAMENTO:N', legend=None),
+                tooltip=['N_DEPARTAMENTO', 'Conteo de ID_INSCRIPCION']
             ).properties(
-                width=300,
-                height=300
+                width=600,
+                height=400
             ),
-            use_container_width=True    
+            use_container_width=True
         )
 
-    if 'N_LOCALIDAD' in df_filtered.columns:
-        dni_por_localidad = df_filtered.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
-        with col2:
-            st.altair_chart(
-                alt.Chart(dni_por_localidad).mark_bar().encode(
-                    x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-y'),
-                    y=alt.Y('Conteo:Q', title='Conteo'),
-                    color='N_LOCALIDAD:N'
-                ).properties(width=300, height=300),
-                use_container_width=True
-            )
+    with col2:
+        st.subheader("Tabla de Adhesiones")
+        st.dataframe(departamento_counts_sorted, use_container_width=True)
+
 # Pestaña de Empresas
 with tab2:
     st.markdown("### Información sobre empresas y puestos vacantes.")
     st.write(f"Datos del archivo actualizados al: {file_dates[1].strftime('%d/%m/%Y %H:%M:%S')}")
-
 
     df_empresas = df[df['N_EMPRESA'].notnull()]
     total_empresas = df_empresas['CUIT'].nunique()
     st.metric(label="Empresas Adheridas", value=total_empresas)
 
     if st.button("Mostrar empresas"):
-        #st.write(df_empresas[['N_EMPRESA','CANTIDAD_EMPLEADOS','N_PUESTO_EMPLEO','N_CATEGORIA_EMPLEO']].drop_duplicates())
-        st.write(df_empresas[['N_EMPRESA','CANTIDAD_EMPLEADOS']].drop_duplicates().reset_index(drop=True))
+        st.write(df_empresas[['N_EMPRESA', 'CANTIDAD_EMPLEADOS']].drop_duplicates().reset_index(drop=True))
+
+    # Verificar si el DataFrame no está vacío antes de continuar
     if not df_empresas.empty:
         st.subheader("Distribución de Empleados por Empresa y Puesto")
 
-        # Agrupar los datos y generar el gráfico de barras apiladas
+        # Agrupar los datos
         df_puesto_agg = df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS':'sum'}).reset_index()
 
+        # Crear el gráfico de barras apiladas
         stacked_bar_chart_2 = alt.Chart(df_puesto_agg).mark_bar().encode(
             x=alt.X('CANTIDAD_EMPLEADOS:Q', title='Cantidad de Empleados'),
             y=alt.Y('N_EMPRESA:N', title='Empresa', sort='-x'),
@@ -204,4 +217,5 @@ with tab2:
             height=400
         )
 
+        # Mostrar el gráfico en Streamlit si el DataFrame no está vacío
         st.altair_chart(stacked_bar_chart_2, use_container_width=True)
