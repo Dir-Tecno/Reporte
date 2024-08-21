@@ -167,11 +167,17 @@ with tab1:
     if 'N_LOCALIDAD' in df_filtered.columns:
         dni_por_localidad = df_filtered.groupby('N_LOCALIDAD').size().reset_index(name='Conteo')
         with col2:
-            st.table(dni_por_localidad.pivot_table(index='N_LOCALIDAD', columns='N_DEPARTAMENTO', values='Conteo', fill_value=0))
-
+            st.altair_chart(
+                alt.Chart(dni_por_localidad).mark_bar().encode(
+                    x=alt.X('N_LOCALIDAD:N', title='Localidad', sort='-y'),
+                    y=alt.Y('Conteo:Q', title='Conteo'),
+                    color='N_LOCALIDAD:N'
+                ).properties(width=300, height=300),
+                use_container_width=True
+            )
 # Pestaña de Empresas
 with tab2:
-    st.markdown("### Información sobre empresas y puestos solicitados.")
+    st.markdown("### Información sobre empresas y puestos vacantes.")
     st.write(f"Datos del archivo actualizados al: {file_dates[1].strftime('%d/%m/%Y %H:%M:%S')}")
 
 
