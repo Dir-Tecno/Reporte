@@ -27,33 +27,36 @@ def download_from_bucket(blob_name, bucket_name):
 
 # Función para cargar y procesar datos, y retornar la fecha de los archivos
 def load_data_from_bucket(blob_names, bucket_name):
-    dfs = []
     file_dates = []  # Lista para almacenar las fechas de modificación de los archivos
-    
     for blob_name in blob_names:
         temp_file_name, file_date = download_from_bucket(blob_name, bucket_name)
         # Especificar tipos de datos para evitar advertencias
         df = pd.read_csv(temp_file_name, low_memory=False)
         dfs.append(df)
         file_dates.append(file_date)  # Almacenar la fecha de modificación
-    
-    combined_df = pd.concat(dfs, ignore_index=True)
-    return combined_df, file_dates
-
+    #combined_df = pd.concat(dfs, ignore_index=True)
+    return dfs, file_dates
 
 # Configuración de la aplicación
-st.set_page_config(page_title="Reporte Ejecutivo de Empleo", layout="wide")
+st.set_page_config(page_title="Reporte Empleo +26", layout="wide")
 
 # Descargar y procesar los datos
+dfs = []
 bucket_name = "direccion"
 blob_names = ["vt_inscripciones_empleo.csv", "vt_empresas_adheridas.csv"]
-df, file_dates = load_data_from_bucket(blob_names, bucket_name)
+dfs, file_dates = load_data_from_bucket(blob_names, bucket_name)
+
+df_inscripciones = dfs[0]
+df_empresas = dfs[1]
+
+
 
 # Convertir las fechas
-if 'FEC_INSCRIPCION' in df.columns:
-    df['FEC_INSCRIPCION'] = pd.to_datetime(df['FEC_INSCRIPCION'])
-if 'FEC_NACIMIENTO' in df.columns:
-    df['FEC_NACIMIENTO'] = pd.to_datetime(df['FEC_NACIMIENTO'])
+if 'FEC_INSCRIPCION' in df_inscripciones.columns:
+    df_inscripciones['FEC_INSCRIPCION'] = pd.to_datetime(df_inscripciones['FEC_INSCRIPCION'],  errors='coerce')
+if 'FEC_NACIMIENTO' in df_inscripciones.columns:
+    df_inscripciones['FEC_NACIMIENTO'] = pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'], errors='coerce')
+df_inscripciones = df_inscripciones.dropna(subset=['FEC_INSCRIPCION', 'FEC_NACIMIENTO'])
 
 # Configuración de pestañas
 tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
@@ -63,11 +66,10 @@ with tab1:
     st.markdown("### Inscripciones Programas Empleo 2024")
     st.write(f"Datos del archivo actualizados al: {file_dates[0].strftime('%d/%m/%Y %H:%M:%S')}")
 
-    df_inscripciones = df[df['N_EMPRESA'].isnull()]
 
-    if 'FEC_INSCRIPCION' in df.columns:
+    if 'FEC_INSCRIPCION' in df_inscripciones.columns:
         st.sidebar.header("Filtros de Fechas")
-        fecha_min, fecha_max = df['FEC_INSCRIPCION'].min().date(), df['FEC_INSCRIPCION'].max().date()
+        fecha_min, fecha_max = df_inscripciones['FEC_INSCRIPCION'].min().date(), df_inscripciones['FEC_INSCRIPCION'].max().date()
         fecha_inicio = st.sidebar.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
         fecha_fin = st.sidebar.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
         df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & 
@@ -106,9 +108,9 @@ with tab1:
     st.markdown("###")
 
     # DNI por Localidad (Barras)
-    if 'N_LOCALIDAD' in df.columns and 'N_DEPARTAMENTO' in df.columns:
+    if 'N_LOCALIDAD' in df_inscripciones.columns and 'N_DEPARTAMENTO' in df_inscripciones.columns:
         # Agrupar por N_LOCALIDAD y N_DEPARTAMENTO
-        dni_por_localidad = df.groupby(['N_LOCALIDAD', 'N_DEPARTAMENTO']).size().reset_index(name='Conteo')
+        dni_por_localidad = df_inscripciones.groupby(['N_LOCALIDAD', 'N_DEPARTAMENTO']).size().reset_index(name='Conteo')
 
         # Reemplazar N_DEPARTAMENTO: todo lo que no es "CAPITAL" se convierte en "INTERIOR"
         dni_por_localidad['N_DEPARTAMENTO'] = dni_por_localidad['N_DEPARTAMENTO'].apply(lambda x: 'INTERIOR' if x != 'CAPITAL' else 'CAPITAL')
@@ -168,7 +170,7 @@ with tab1:
     # Mostrar el gráfico y la tabla
     col1, col2 = st.columns([2, 1])
 
-    with col1:
+    with col2:
         st.subheader("Conteo por Departamento")
         st.altair_chart(
             alt.Chart(departamento_counts_sorted).mark_bar().encode(
@@ -183,21 +185,20 @@ with tab1:
             use_container_width=True
         )
 
-    with col2:
+    with col1:
         st.subheader("Tabla de Adhesiones")
-        st.dataframe(departamento_counts_sorted, use_container_width=True)
+        st.dataframe(departamento_counts_sorted, hide_index=True)
 
 # Pestaña de Empresas
 with tab2:
     st.markdown("### Información sobre empresas y puestos vacantes.")
     st.write(f"Datos del archivo actualizados al: {file_dates[1].strftime('%d/%m/%Y %H:%M:%S')}")
 
-    df_empresas = df[df['N_EMPRESA'].notnull()]
     total_empresas = df_empresas['CUIT'].nunique()
     st.metric(label="Empresas Adheridas", value=total_empresas)
 
     if st.button("Mostrar empresas"):
-        st.write(df_empresas[['N_EMPRESA', 'CANTIDAD_EMPLEADOS']].drop_duplicates().reset_index(drop=True))
+        st.dataframe(df_empresas[['N_EMPRESA', 'CANTIDAD_EMPLEADOS']].drop_duplicates(),hide_index=True)
 
     # Verificar si el DataFrame no está vacío antes de continuar
     if not df_empresas.empty:
@@ -219,3 +220,30 @@ with tab2:
 
         # Mostrar el gráfico en Streamlit si el DataFrame no está vacío
         st.altair_chart(stacked_bar_chart_2, use_container_width=True)
+
+        # Agrupar los datos por N_PUESTO_EMPLEO y contar las apariciones de cada puesto
+        conteo_puestos = df_empresas.groupby('N_PUESTO_EMPLEO').size().reset_index(name='Conteo')
+
+        # Ordenar los puestos por conteo descendente
+        conteo_puestos = conteo_puestos.sort_values(by='Conteo', ascending=False).reset_index(drop=True)
+
+        # Mostrar el resultado como una tabla en Streamlit
+        st.subheader("Conteo de Apariciones por Puesto de Empleo")
+        st.dataframe(conteo_puestos, hide_index=True)
+        #st.write(conteo_puestos)
+
+        # Crear un gráfico de barras horizontales
+        grafico_puestos = alt.Chart(conteo_puestos).mark_bar().encode(
+            x=alt.X('Conteo:Q', title='Conteo'),
+            y=alt.Y('N_PUESTO_EMPLEO:N', title='Puesto de Empleo', sort='-x'),
+            color=alt.Color('N_PUESTO_EMPLEO:N', legend=None),  # Se elimina la leyenda si no es necesaria
+            tooltip=['N_PUESTO_EMPLEO', 'Conteo']
+        ).properties(
+            width=600,
+            height=400
+        )
+
+        # Mostrar el gráfico en Streamlit
+        st.subheader("Gráfico de Barras de Apariciones por Puesto de Empleo")
+        st.altair_chart(grafico_puestos, use_container_width=True)
+        
