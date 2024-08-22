@@ -120,7 +120,7 @@ with tab1:
         st.altair_chart(final_chart, use_container_width=True)
 
     # Gráficos predefinidos para inscripciones
-    st.markdown("### Gráficos de Inscripciones por departamentos")
+    st.markdown("### Gráficos de Adhesiones por departamentos")
 
      
     # Filtros debajo del título
