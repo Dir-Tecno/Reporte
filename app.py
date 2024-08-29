@@ -13,7 +13,7 @@ st.set_page_config(page_title="Reporte Empleo +26", layout="wide")
 
 # Nombres de los archivos en el bucket
 bucket_name = "direccion"
-blob_names = ["vt_inscripciones_empleo.csv", "vt_empresas_adheridas.csv", "VT_REPORTES_PPP_MAS26.csv", "vt_empresas_seleccionadas.csv"]
+blob_names = ["vt_inscripciones_empleo.csv", "vt_empresas_adheridas.csv", "VT_REPORTES_PPP_MAS26.csv", "vt_inscripciones_empleo_e26empr.csv"]
 dfs, file_dates = load_data_from_bucket(blob_names, bucket_name, credentials)
 
 # Crear las pestañas

@@ -30,18 +30,19 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     df_inscripciones['Edad'] = (pd.Timestamp('2024-08-19') - df_inscripciones['FEC_NACIMIENTO']).dt.days // 365
 
     # Métricas de adhesiones
-    total_inscripciones = df_inscripciones.shape[0]
+    
     count_26_or_less = df_inscripciones[df_inscripciones['Edad'] <= 26].shape[0]
     count_26_44 = df_inscripciones[(df_inscripciones['Edad'] > 26) & (df_inscripciones['Edad'] < 45)].shape[0]
     count_45 = df_inscripciones[df_inscripciones['Edad'] >= 45].shape[0]
+    total_inscripciones = df_inscripciones.shape[0] - count_26_or_less
     total_inscriptos= df_inscriptos.shape[0] 
 
     # Mostrar las métricas en columnas
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1,col3, col4, col5 = st.columns(4)
     with col1:
         st.metric(label="Adhesiones", value=total_inscripciones)
-    with col2:
-        st.metric(label="26 años o menos", value=count_26_or_less)
+    #with col2:
+        #st.metric(label="26 años o menos", value=count_26_or_less)
     with col3:
         st.metric(label="Entre 26 y 44 años", value=count_26_44)   
     with col4:
@@ -87,7 +88,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         final_chart = bar_chart_localidad + text
         st.altair_chart(final_chart, use_container_width=True)
 
-    st.markdown("### Gráficos de Inscripciones por Departamentos")
+    st.markdown("### por Departamentos")
     if 'N_DEPARTAMENTO' in df_inscripciones.columns:
         departamentos = df_inscripciones['N_DEPARTAMENTO'].unique()
         selected_departamento = st.multiselect("Filtrar por Departamento", departamentos, default=departamentos)
@@ -95,8 +96,8 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     else:
         df_filtered_departamentos = df_inscripciones
 
-    departamento_counts = df_filtered_departamentos.groupby(['N_DEPARTAMENTO', 'N_LOCALIDAD']).size().reset_index(name='Conteo de ID_INSCRIPCION')
-    departamento_counts_sorted = departamento_counts.sort_values(by='Conteo de ID_INSCRIPCION', ascending=False)
+    departamento_counts = df_filtered_departamentos.groupby(['N_DEPARTAMENTO', 'N_LOCALIDAD']).size().reset_index(name='Cuenta')
+    departamento_counts_sorted = departamento_counts.sort_values(by='Cuenta', ascending=False)
 
     col1, col2 = st.columns([2, 3])
     with col2:
@@ -104,9 +105,9 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.altair_chart(
             alt.Chart(departamento_counts_sorted).mark_bar().encode(
                 y=alt.Y('N_DEPARTAMENTO:N', title='Departamento', sort='-x'),
-                x=alt.X('Conteo de ID_INSCRIPCION:Q', title='Conteo'),
+                x=alt.X('Cuenta:Q', title='Conteo'),
                 color=alt.Color('N_DEPARTAMENTO:N', legend=None),
-                tooltip=['N_DEPARTAMENTO', 'Conteo de ID_INSCRIPCION']
+                tooltip=['N_DEPARTAMENTO', 'Cuenta']
             ).properties(width=900, height=500),
             use_container_width=True
         )
@@ -126,6 +127,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
     # Gráfico de cantidad de inscriptos por empresa
     st.subheader("Cantidad de Inscriptos por Empresa")
+    st.metric(label="Inscriptos/Matchs",value=total_inscriptos)
     empresa_chart = alt.Chart(inscriptos_por_empresa).mark_bar().encode(
     y=alt.Y('RAZON_SOCIAL:N', title='Empresa', sort='-x'),
     x=alt.X('Cantidad de Inscriptos:Q', title='Cantidad de Inscriptos'),
