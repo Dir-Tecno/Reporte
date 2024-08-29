@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+from datetime import datetime
 
 def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas, file_date_inscripciones, file_date_inscriptos, file_date_empresas):
     # Convertir las fechas en inscripciones
@@ -10,9 +11,9 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         df_inscripciones['FEC_NACIMIENTO'] = pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'], errors='coerce')
         df_inscripciones = df_inscripciones.dropna(subset=['FEC_INSCRIPCION', 'FEC_NACIMIENTO'])
 
-    # Convertir las fechas en inscriptos
-    df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  # Filtrar solo los registros con ID_EST_FICHA = 8
-    
+    # Filtrar solo los registros con ID_EST_FICHA = 8
+    df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
+
     # Pestaña inscripciones
     st.markdown("### Inscripciones Programas Empleo 2024")
     st.write(f"Datos de inscripciones actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
@@ -25,30 +26,42 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         fecha_fin = st.sidebar.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
         df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & 
                                             (df_inscripciones['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
-        
-    # Calcular edades en inscripciones
-    df_inscripciones['Edad'] = (pd.Timestamp('2024-08-19') - df_inscripciones['FEC_NACIMIENTO']).dt.days // 365
-
-    # Métricas de adhesiones
     
+    if df_inscripciones.empty:
+        st.write("No hay inscripciones para mostrar en el rango de fechas seleccionado.")
+        return
+    
+     # Calcular edades en inscripciones
+    fecha_actual = pd.Timestamp(datetime.now())
+    df_inscripciones['Edad'] = (fecha_actual - pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'])).dt.days // 365
+
+# Métricas de adhesiones
     count_26_or_less = df_inscripciones[df_inscripciones['Edad'] <= 26].shape[0]
     count_26_44 = df_inscripciones[(df_inscripciones['Edad'] > 26) & (df_inscripciones['Edad'] < 45)].shape[0]
     count_45 = df_inscripciones[df_inscripciones['Edad'] >= 45].shape[0]
+
+# Filtrar inscripciones para los departamentos específicos
+    df_dept_specific = df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin(['PRESIDENTE ROQUE SAENZ PEÑA', 'GENERAL ROCA'])]
+    total_dept_specific = df_dept_specific.shape[0]
+
+# Cálculo total
     total_inscripciones = df_inscripciones.shape[0] - count_26_or_less
-    total_inscriptos= df_inscriptos.shape[0] 
+    total_inscriptos = df_inscriptos.shape[0]
 
     # Mostrar las métricas en columnas
-    col1,col3, col4, col5 = st.columns(4)
+    col1, col3, col4, col5, col6, col7 = st.columns(6)
     with col1:
         st.metric(label="Adhesiones", value=total_inscripciones)
     #with col2:
-        #st.metric(label="26 años o menos", value=count_26_or_less)
+    #st.metric(label="26 años o menos", value=count_26_or_less)
     with col3:
         st.metric(label="Entre 26 y 44 años", value=count_26_44)   
     with col4:
         st.metric(label="45 años o más", value=count_45)
     with col5:
-        st.metric(label="Inscriptos",value=total_inscriptos)
+        st.metric(label="Total en Zonas Vulnerables", value=total_dept_specific) 
+    with col6:
+        st.metric(label="Inscriptos/Match", value=total_inscriptos)
 
 
     # Gráfico de Inscripciones por Fecha
