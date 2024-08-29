@@ -41,7 +41,21 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     count_45 = df_inscripciones[df_inscripciones['Edad'] >= 45].shape[0]
 
 # Filtrar inscripciones para los departamentos específicos
-    df_dept_specific = df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin(['PRESIDENTE ROQUE SAENZ PEÑA', 'GENERAL ROCA'])]
+    df_dept_specific = df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin([
+        'PRESIDENTE ROQUE SAENZ PEÑA', 
+        'GENERAL ROCA',
+        "CAPITAL",
+        "RIO SECO",
+        "TULUMBA",
+        "POCHO",
+        "SAN JAVIER",
+        "SAN ALBERTO",
+        "MINAS",
+        "CRUZ DEL EJE",
+        "TOTORAL",
+        "SOBREMONTE",
+        "ISCHILIN"
+        ])]
     total_dept_specific = df_dept_specific.shape[0]
 
 # Cálculo total
@@ -59,7 +73,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     with col4:
         st.metric(label="45 años o más", value=count_45)
     with col5:
-        st.metric(label="Total en Zonas Vulnerables", value=total_dept_specific) 
+        st.metric(label="Total en Zonas Favorecidas", value=total_dept_specific) 
     with col6:
         st.metric(label="Inscriptos/Match", value=total_inscriptos)
 
