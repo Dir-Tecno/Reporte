@@ -11,6 +11,10 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         df_inscripciones['FEC_NACIMIENTO'] = pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'], errors='coerce')
         df_inscripciones = df_inscripciones.dropna(subset=['FEC_INSCRIPCION', 'FEC_NACIMIENTO'])
 
+    # Convertir la columna FER_NAC en df_inscriptos a fecha
+    df_inscriptos['FER_NAC'] = pd.to_datetime(df_inscriptos['FER_NAC'], errors='coerce')
+    df_inscriptos = df_inscriptos.copy()  # Asegurarse de trabajar con una copia
+
     # Filtrar solo los registros con ID_EST_FICHA = 8
     df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
 
@@ -31,16 +35,25 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.write("No hay inscripciones para mostrar en el rango de fechas seleccionado.")
         return
     
-     # Calcular edades en inscripciones
+    # Calcular edades en inscripciones
     fecha_actual = pd.Timestamp(datetime.now())
     df_inscripciones['Edad'] = (fecha_actual - pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'])).dt.days // 365
 
-# Métricas de adhesiones
+    # Calcular edades en inscriptos
+    df_inscriptos['Edad'] = (fecha_actual - df_inscriptos['FER_NAC']).dt.days // 365
+
+    # Métricas de adhesiones
     count_26_or_less = df_inscripciones[df_inscripciones['Edad'] <= 26].shape[0]
     count_26_44 = df_inscripciones[(df_inscripciones['Edad'] > 26) & (df_inscripciones['Edad'] < 45)].shape[0]
     count_45 = df_inscripciones[df_inscripciones['Edad'] >= 45].shape[0]
 
-# Filtrar inscripciones para los departamentos específicos
+    # Calcular personas de 45 o más años en inscriptos
+    count_45_inscriptos = df_inscriptos[df_inscriptos['Edad'] >= 45].shape[0]
+
+    # Calcular el número de CUIL únicos
+    unique_cuil_count = df_inscriptos['CUIL'].nunique()
+
+    # Filtrar inscripciones para los departamentos específicos
     df_dept_specific = df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin([
         'PRESIDENTE ROQUE SAENZ PEÑA', 
         'GENERAL ROCA',
@@ -58,41 +71,50 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         ])]
     total_dept_specific = df_dept_specific.shape[0]
 
-# Cálculo total
-    total_inscripciones = df_inscripciones.shape[0] - count_26_or_less
+    # Cálculo total
+    total_inscripciones = df_inscripciones.shape[0]
     total_inscriptos = df_inscriptos.shape[0]
 
     # Mostrar las métricas en columnas
     col1, col3, col4, col5, col6, col7 = st.columns(6)
     with col1:
         st.metric(label="Adhesiones", value=total_inscripciones)
-    #with col2:
-    #st.metric(label="26 años o menos", value=count_26_or_less)
     with col3:
-        st.metric(label="Entre 26 y 44 años", value=count_26_44)   
+        st.metric(label="Entre 26 y 44 años", value=count_26_44)
     with col4:
         st.metric(label="45 años o más", value=count_45)
     with col5:
-        st.metric(label="Total en Zonas Favorecidas", value=total_dept_specific) 
-    with col6:
-        st.metric(label="Inscriptos/Match", value=total_inscriptos)
+        st.metric(label="Total en Zonas Favorecidas", value=total_dept_specific)
 
+    # Añadir una sección de métricas con título "Matcheos"
+    st.markdown("### Matcheos")
+
+    # Crear las columnas para las métricas
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric(label="Inscriptos/Match", value=df_inscriptos.shape[0])
+
+    with col2:
+        st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
+
+    with col3:
+        st.metric(label="Personas Únicas (CUIL)", value=unique_cuil_count)
 
     # Gráfico de Inscripciones por Fecha
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
-    # Agrupar por fecha y contar inscripciones
+        # Agrupar por fecha y contar inscripciones
         inscripciones_por_fecha = df_inscripciones.groupby(df_inscripciones['FEC_INSCRIPCION'].dt.date).size().reset_index(name='Conteo')
         inscripciones_por_fecha.columns = ['Fecha', 'Conteo']  # Renombrar columnas para evitar problemas en el gráfico
 
-    st.subheader("Inscripciones por Fecha")
-    fecha_chart = alt.Chart(inscripciones_por_fecha).mark_line().encode(
-        x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
-        y=alt.Y('Conteo:Q', title='Cantidad de Inscripciones'),
-        tooltip=['Fecha:T', 'Conteo:Q']
-    ).properties(width=800, height=400)
+        st.subheader("Inscripciones por Fecha")
+        fecha_chart = alt.Chart(inscripciones_por_fecha).mark_line().encode(
+            x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
+            y=alt.Y('Conteo:Q', title='Cantidad de Inscripciones'),
+            tooltip=['Fecha:T', 'Conteo:Q']
+        ).properties(width=800, height=400)
 
-    st.altair_chart(fecha_chart, use_container_width=True)
-
+        st.altair_chart(fecha_chart, use_container_width=True)
 
     # DNI por Localidad (Barras)
     if 'N_LOCALIDAD' in df_inscripciones.columns and 'N_DEPARTAMENTO' in df_inscripciones.columns:
@@ -142,7 +164,6 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.subheader("Tabla de Adhesiones")
         st.dataframe(departamento_counts_sorted, hide_index=True)
 
-
     # Agrupar y contar la cantidad de inscriptos por empresa
     inscriptos_por_empresa = df_inscriptos.groupby('RAZON_SOCIAL')['ID_FICHA'].count().reset_index(name='Cantidad de Inscriptos')
     inscriptos_por_empresa = inscriptos_por_empresa.sort_values(by='Cantidad de Inscriptos', ascending=False)
@@ -156,9 +177,9 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     st.subheader("Cantidad de Inscriptos por Empresa")
     st.metric(label="Inscriptos/Matchs",value=total_inscriptos)
     empresa_chart = alt.Chart(inscriptos_por_empresa).mark_bar().encode(
-    y=alt.Y('RAZON_SOCIAL:N', title='Empresa', sort='-x'),
-    x=alt.X('Cantidad de Inscriptos:Q', title='Cantidad de Inscriptos'),
-    color=alt.Color('RAZON_SOCIAL:N', legend=None)
+        y=alt.Y('RAZON_SOCIAL:N', title='Empresa', sort='-x'),
+        x=alt.X('Cantidad de Inscriptos:Q', title='Cantidad de Inscriptos'),
+        color=alt.Color('RAZON_SOCIAL:N', legend=None)
     ).properties(width=600, height=400)
 
     st.altair_chart(empresa_chart, use_container_width=True)
@@ -173,10 +194,3 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     with col2:
         st.subheader("CUIL que seleccionaron Empresa")
         st.dataframe(df_cuil_por_empresa_sorted, hide_index=True)
-
-
-    
-
-
-
-
