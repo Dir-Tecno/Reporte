@@ -19,8 +19,8 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
 
     # Pestaña inscripciones
-    st.markdown("### Inscripciones Programas Empleo 2024")
-    st.write(f"Datos de inscripciones actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
+    st.markdown("### Programas Empleo +26 2024")
+    st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
     # Filtros de fechas para inscripciones
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
@@ -83,8 +83,8 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.metric(label="Entre 26 y 44 años", value=count_26_44)
     with col4:
         st.metric(label="45 años o más", value=count_45)
-    with col5:
-        st.metric(label="Total en Zonas Favorecidas", value=total_dept_specific)
+    #with col5:
+    #    st.metric(label="Total en Zonas Favorecidas", value=total_dept_specific)
 
     # Añadir una sección de métricas con título "Matcheos"
     st.markdown("### Matcheos")
