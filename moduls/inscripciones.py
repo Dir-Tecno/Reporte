@@ -16,7 +16,11 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     df_inscriptos = df_inscriptos.copy()  # Asegurarse de trabajar con una copia
 
     # Filtrar solo los registros con ID_EST_FICHA = 8
+    df_temp = df_inscriptos['ID_MOD_CONT_AFIP'] == 80 
+    
+    df_cti = df_inscriptos[df_inscriptos['ID_MOD_CONT_AFIP'] == 8.0]
     df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
+    
 
     # Pestaña inscripciones
     st.markdown("### Programas Empleo +26 2024")
@@ -74,15 +78,17 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Cálculo total
     total_inscripciones = df_inscripciones.shape[0]
     total_inscriptos = df_inscriptos.shape[0]
-
+    total_cti = df_cti.shape[0]
     # Mostrar las métricas en columnas
     col1, col3, col4, col5, col6, col7 = st.columns(6)
     with col1:
-        st.metric(label="Adhesiones", value=total_inscripciones)
+        st.metric(label="Adhesiones", value=total_inscripciones-count_26_or_less)
     with col3:
         st.metric(label="Entre 26 y 44 años", value=count_26_44)
     with col4:
         st.metric(label="45 años o más", value=count_45)
+    with col5:
+        st.metric(label="CTI", value=total_cti)
     #with col5:
     #    st.metric(label="Total en Zonas Favorecidas", value=total_dept_specific)
 
