@@ -30,12 +30,13 @@ tab1, tab2, tab3 = st.tabs(["Inscripciones", "Empresas", "Respuestas"])
 
 with tab1:
     # Mostrar inscripciones
-    show_inscriptions(dfs[0], dfs[2], dfs[3], file_dates[0], file_dates[2], file_dates[3])
+    show_inscriptions(dfs[0], file_dates[0])
 
 with tab2:
     # Mostrar empresas
-    show_companies(dfs[1], file_dates[1])
+    show_companies(dfs[1], dfs[2], dfs[3])
 
 with tab3:
     # Mostrar respuestas
     show_responses(dfs[4], file_dates[4])
+
