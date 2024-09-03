@@ -23,7 +23,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     
 
     # Pestaña inscripciones
-    st.markdown("### Programas Empleo +26 2024")
+    st.markdown("### Programas Empleo +26")
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
     # Filtros de fechas para inscripciones
@@ -85,7 +85,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Mostrar las métricas en columnas
     col1, col3, col4, col5, col6, col7 = st.columns(6)
     with col1:
-        st.metric(label="Adhesiones", value=total_inscripciones-count_26_or_less)
+        st.metric(label="Adhesiones/postulantes", value=total_inscripciones-count_26_or_less)
     with col3:
         st.metric(label="Entre 26 y 44 años", value=count_26_44)
     with col4:
@@ -112,7 +112,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.metric(label="Inscriptos/Match", value=df_inscriptos.shape[0])
     
     with col2:
-        st.metric(label="Personas Únicas (CUIL)", value=unique_cuil_count)
+        st.metric(label="Personas Únicas inscriptas (CUIL)", value=unique_cuil_count)
 
     with col3:
         st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
