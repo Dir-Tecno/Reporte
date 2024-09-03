@@ -128,7 +128,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         inscripciones_por_fecha = df_inscripciones.groupby(df_inscripciones['FEC_INSCRIPCION'].dt.date).size().reset_index(name='Conteo')
         inscripciones_por_fecha.columns = ['Fecha', 'Conteo']  # Renombrar columnas para evitar problemas en el gráfico
 
-        st.subheader("Inscripciones por Fecha")
+        st.subheader("Postulaciones por Fecha")
         fecha_chart = alt.Chart(inscripciones_por_fecha).mark_line().encode(
             x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
             y=alt.Y('Conteo:Q', title='Cantidad de Inscripciones'),
