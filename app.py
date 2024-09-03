@@ -191,7 +191,7 @@ with tab1:
 
 # Pestaña de Empresas
 with tab2:
-    st.markdown("### Información sobre empresas y puestos vacantes.")
+    st.markdown("### Información sobre empresas y puestos.")
     st.write(f"Datos del archivo actualizados al: {file_dates[1].strftime('%d/%m/%Y %H:%M:%S')}")
 
     total_empresas = df_empresas['CUIT'].nunique()
