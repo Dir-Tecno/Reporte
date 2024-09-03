@@ -198,7 +198,7 @@ with tab2:
     st.metric(label="Empresas Adheridas", value=total_empresas)
 
     if st.button("Mostrar empresas"):
-        st.dataframe(df_empresas[['N_EMPRESA', 'CANTIDAD_EMPLEADOS']].drop_duplicates(),hide_index=True)
+        st.dataframe(df_empresas[['CUIT','N_LOCALIDAD','N_EMPRESA', 'CANTIDAD_EMPLEADOS']].drop_duplicates(),hide_index=True)
 
     # Verificar si el DataFrame no está vacío antes de continuar
     if not df_empresas.empty:
