@@ -15,10 +15,10 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     df_inscriptos['FER_NAC'] = pd.to_datetime(df_inscriptos['FER_NAC'], errors='coerce')
     df_inscriptos = df_inscriptos.copy()  # Asegurarse de trabajar con una copia
 
-    # Filtrar solo los registros con ID_EST_FICHA = 8
-    df_temp = df_inscriptos['ID_MOD_CONT_AFIP'] == 80 
-    
+    # Filtrar solo los CTI
     df_cti = df_inscriptos[df_inscriptos['ID_MOD_CONT_AFIP'] == 8.0]
+
+    # Filtrar solo los registros con ID_EST_FICHA = 8
     df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
     
 
@@ -54,25 +54,28 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Calcular personas de 45 o más años en inscriptos
     count_45_inscriptos = df_inscriptos[df_inscriptos['Edad'] >= 45].shape[0]
 
+
     # Calcular el número de CUIL únicos
     unique_cuil_count = df_inscriptos['CUIL'].nunique()
 
-    # Filtrar inscripciones para los departamentos específicos
-    df_dept_specific = df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin([
-        'PRESIDENTE ROQUE SAENZ PEÑA', 
-        'GENERAL ROCA',
-        "CAPITAL",
-        "RIO SECO",
-        "TULUMBA",
-        "POCHO",
-        "SAN JAVIER",
-        "SAN ALBERTO",
-        "MINAS",
-        "CRUZ DEL EJE",
-        "TOTORAL",
-        "SOBREMONTE",
-        "ISCHILIN"
-        ])]
+    # Filtrar inscripciones para los departamentos específicos y que tengan menos de 45 años
+    df_dept_specific = df_inscriptos[
+        (df_inscriptos['N_DEPARTAMENTO'].isin([
+            'PRESIDENTE ROQUE SAENZ PEÑA', 
+            'GENERAL ROCA',
+            "RIO SECO",
+            "TULUMBA",
+            "POCHO",
+            "SAN JAVIER",
+            "SAN ALBERTO",
+            "MINAS",
+            "CRUZ DEL EJE",
+            "TOTORAL",
+            "SOBREMONTE",
+            "ISCHILIN"
+        ])) & (df_inscriptos['Edad'] < 45)
+    ]
+
     total_dept_specific = df_dept_specific.shape[0]
 
     # Cálculo total
@@ -87,25 +90,37 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.metric(label="Entre 26 y 44 años", value=count_26_44)
     with col4:
         st.metric(label="45 años o más", value=count_45)
-    with col5:
-        st.metric(label="CTI", value=total_cti)
-    #with col5:
-    #    st.metric(label="Total en Zonas Favorecidas", value=total_dept_specific)
+   
+    with col6:
+        st.markdown(
+            f"""
+            <div style="background-color:rgb(255 209 209);padding:10px;border-radius:5px;">
+                <strong>CTI</strong><br>
+                <span style="font-size:24px;">{total_cti}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
 
     # Añadir una sección de métricas con título "Matcheos"
     st.markdown("### Matcheos")
 
     # Crear las columnas para las métricas
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric(label="Inscriptos/Match", value=df_inscriptos.shape[0])
-
+    
     with col2:
-        st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
+        st.metric(label="Personas Únicas (CUIL)", value=unique_cuil_count)
 
     with col3:
-        st.metric(label="Personas Únicas (CUIL)", value=unique_cuil_count)
+        st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
+    
+    with col4:
+        st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
+
+
 
     # Gráfico de Inscripciones por Fecha
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:

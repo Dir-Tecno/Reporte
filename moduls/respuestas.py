@@ -21,7 +21,7 @@ def show_responses(df_respuestas, file_date_respuestas):
             df_respuestas = df_respuestas[df_respuestas['CATEGORIA'] == selected_categoria]
             
         st.subheader("Promedio por Aspecto")
-        total_respondieron = df_respuestas.shape[0]
+        #total_respondieron = df_respuestas.shape[0]
         #st.metric(label="Respuestas", value=total_respondieron)
         bar_chart_aspectos = alt.Chart(df_promedios_melted).mark_bar().encode(
             y=alt.Y('Aspecto:N', title='Aspecto', sort='-x'),
