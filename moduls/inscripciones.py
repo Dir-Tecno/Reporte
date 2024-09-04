@@ -13,6 +13,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
     # Convertir la columna FER_NAC en df_inscriptos a fecha
     df_inscriptos['FER_NAC'] = pd.to_datetime(df_inscriptos['FER_NAC'], errors='coerce')
+    df_inscriptos['FEC_SIST'] = pd.to_datetime(df_inscriptos['FEC_SIST'], errors='coerce')
     df_inscriptos = df_inscriptos.copy()  # Asegurarse de trabajar con una copia
 
     # Filtrar solo los CTI
@@ -122,41 +123,53 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
 
 
-    # Gráfico de Inscripciones por Fecha
-    if 'FEC_INSCRIPCION' in df_inscripciones.columns:
-        # Agrupar por fecha y contar inscripciones
+    # Verifica que las columnas de fecha estén presentes en los DataFrames
+    if 'FEC_INSCRIPCION' in df_inscripciones.columns and 'FEC_SIST' in df_inscriptos.columns:
+        # Agrupar por fecha y contar inscripciones para el primer conjunto (Inscripciones)
         inscripciones_por_fecha = df_inscripciones.groupby(df_inscripciones['FEC_INSCRIPCION'].dt.date).size().reset_index(name='Conteo')
-        inscripciones_por_fecha.columns = ['Fecha', 'Conteo']  # Renombrar columnas para evitar problemas en el gráfico
-
-        st.subheader("Postulaciones por Fecha")
-        fecha_chart = alt.Chart(inscripciones_por_fecha).mark_line().encode(
+        inscripciones_por_fecha.columns = ['Fecha', 'Conteo']
+        inscripciones_por_fecha['Tipo'] = 'Inscripciones'
+    
+        # Agrupar por fecha y contar inscripciones para el segundo conjunto (Match)
+        match_por_fecha = df_inscriptos.groupby(df_inscriptos['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
+        match_por_fecha.columns = ['Fecha', 'Conteo']
+        match_por_fecha['Tipo'] = 'Match'
+    
+        # Combinar ambos DataFrames en uno solo
+        datos_combinados = pd.concat([inscripciones_por_fecha, match_por_fecha])
+    
+        # Crear gráfico combinado
+        st.subheader("Postulaciones y Match por Fecha")
+        fecha_chart_combined = alt.Chart(datos_combinados).mark_line().encode(
             x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
-            y=alt.Y('Conteo:Q', title='Cantidad de Inscripciones'),
-            tooltip=['Fecha:T', 'Conteo:Q']
+            y=alt.Y('Conteo:Q', title='Cantidad'),
+            color='Tipo:N',  # Diferenciar por tipo (Inscripciones o Match)
+            tooltip=['Fecha:T', 'Conteo:Q', 'Tipo:N']
         ).properties(width=800, height=400)
-
-        st.altair_chart(fecha_chart, use_container_width=True)
-
-    # DNI por Localidad (Barras)
-    if 'N_LOCALIDAD' in df_inscripciones.columns and 'N_DEPARTAMENTO' in df_inscripciones.columns:
-        dni_por_localidad = df_inscripciones.groupby(['N_LOCALIDAD', 'N_DEPARTAMENTO']).size().reset_index(name='Conteo')
-        dni_por_localidad['N_DEPARTAMENTO'] = dni_por_localidad['N_DEPARTAMENTO'].apply(lambda x: 'INTERIOR' if x != 'CAPITAL' else 'CAPITAL')
-
-        dni_por_localidad_filter = st.multiselect("Filtrar por Región", dni_por_localidad['N_DEPARTAMENTO'].unique(), default=dni_por_localidad['N_DEPARTAMENTO'].unique())
-        dni_por_localidad = dni_por_localidad[dni_por_localidad['N_DEPARTAMENTO'].isin(dni_por_localidad_filter)]
-
-        top_10_localidades = dni_por_localidad.sort_values(by='Conteo', ascending=False).head(10)
-        st.subheader("Top 10 de Adhesiones por Localidad")
-
-        bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
-            y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
-            x=alt.X('Conteo:Q', title='Conteo'),
-            color=alt.Color('N_LOCALIDAD:N', legend=None)
-        ).properties(width=600, height=400)
-
-        text = bar_chart_localidad.mark_text(align='left', baseline='middle', dx=3).encode(text='Conteo:Q')
-        final_chart = bar_chart_localidad + text
-        st.altair_chart(final_chart, use_container_width=True)
+    
+        # Mostrar el gráfico en Streamlit
+        st.altair_chart(fecha_chart_combined, use_container_width=True)
+    
+        # DNI por Localidad (Barras)
+        if 'N_LOCALIDAD' in df_inscripciones.columns and 'N_DEPARTAMENTO' in df_inscripciones.columns:
+            dni_por_localidad = df_inscripciones.groupby(['N_LOCALIDAD', 'N_DEPARTAMENTO']).size().reset_index(name='Conteo')
+            dni_por_localidad['N_DEPARTAMENTO'] = dni_por_localidad['N_DEPARTAMENTO'].apply(lambda x: 'INTERIOR' if x != 'CAPITAL' else 'CAPITAL')
+    
+            dni_por_localidad_filter = st.multiselect("Filtrar por Región", dni_por_localidad['N_DEPARTAMENTO'].unique(), default=dni_por_localidad['N_DEPARTAMENTO'].unique())
+            dni_por_localidad = dni_por_localidad[dni_por_localidad['N_DEPARTAMENTO'].isin(dni_por_localidad_filter)]
+    
+            top_10_localidades = dni_por_localidad.sort_values(by='Conteo', ascending=False).head(10)
+            st.subheader("Top 10 de Adhesiones por Localidad")
+    
+            bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
+                y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
+                x=alt.X('Conteo:Q', title='Conteo'),
+                color=alt.Color('N_LOCALIDAD:N', legend=None)
+            ).properties(width=600, height=400)
+    
+            text = bar_chart_localidad.mark_text(align='left', baseline='middle', dx=3).encode(text='Conteo:Q')
+            final_chart = bar_chart_localidad + text
+            st.altair_chart(final_chart, use_container_width=True)
 
     st.markdown("### por Departamentos")
     if 'N_DEPARTAMENTO' in df_inscripciones.columns:
