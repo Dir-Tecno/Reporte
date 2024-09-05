@@ -128,7 +128,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         # Agrupar por fecha y contar inscripciones para el primer conjunto (Inscripciones)
         inscripciones_por_fecha = df_inscripciones.groupby(df_inscripciones['FEC_INSCRIPCION'].dt.date).size().reset_index(name='Conteo')
         inscripciones_por_fecha.columns = ['Fecha', 'Conteo']
-        inscripciones_por_fecha['Tipo'] = 'Inscripciones'
+        inscripciones_por_fecha['Tipo'] = 'Adhesiones'
     
         # Agrupar por fecha y contar inscripciones para el segundo conjunto (Match)
         match_por_fecha = df_inscriptos.groupby(df_inscriptos['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
