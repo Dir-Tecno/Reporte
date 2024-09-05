@@ -3,7 +3,7 @@ import pandas as pd
 import altair as alt
 from datetime import datetime
 
-def show_inscriptions(df_inscripciones, file_date_inscripciones):    
+def show_inscriptions(df_inscripciones, df_inscriptos, file_date_inscriptos, file_date_inscripciones):
     # Convertir las fechas en inscripciones
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
         df_inscripciones['FEC_INSCRIPCION'] = pd.to_datetime(df_inscripciones['FEC_INSCRIPCION'], errors='coerce')
@@ -11,7 +11,52 @@ def show_inscriptions(df_inscripciones, file_date_inscripciones):
         df_inscripciones['FEC_NACIMIENTO'] = pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'], errors='coerce')
         df_inscripciones = df_inscripciones.dropna(subset=['FEC_INSCRIPCION', 'FEC_NACIMIENTO'])
 
-    st.markdown("### Programas Empleo +26 2024")
+    # Convertir la columna FER_NAC en df_inscriptos a fecha
+    df_inscriptos['FER_NAC'] = pd.to_datetime(df_inscriptos['FER_NAC'], errors='coerce')
+    df_inscriptos['FEC_SIST'] = pd.to_datetime(df_inscriptos['FEC_SIST'], errors='coerce')
+    df_inscriptos = df_inscriptos.copy()  # Asegurarse de trabajar con una copia
+
+
+    # Filtrar solo los CTI
+    df_cti = df_inscriptos[df_inscriptos['ID_MOD_CONT_AFIP'] == 8.0]
+
+    # Filtrar solo los registros con ID_EST_FICHA = 8
+    df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8].copy()
+
+    # Calcular la edad y agregarla al DataFrame
+    fecha_actual = pd.Timestamp.now()
+    df_inscriptos['Edad'] = (fecha_actual - df_inscriptos['FER_NAC']).dt.days // 365.25
+    
+    # Contar CUILs únicos de personas de 45 años o más en inscriptos
+    count_45_inscriptos_unique_cuil = df_inscriptos[df_inscriptos['Edad'] >= 45]['CUIL'].nunique()
+
+    # Calcular el número de CUIL únicos
+    unique_cuil_count = df_inscriptos['CUIL'].nunique()
+
+    # Filtrar inscripciones para los departamentos específicos y que tengan menos de 45 años
+    df_dept_specific = df_inscriptos[
+        (df_inscriptos['N_DEPARTAMENTO'].isin([
+            'PRESIDENTE ROQUE SAENZ PEÑA', 
+            'GENERAL ROCA',
+            "RIO SECO",
+            "TULUMBA",
+            "POCHO",
+            "SAN JAVIER",
+            "SAN ALBERTO",
+            "MINAS",
+            "CRUZ DEL EJE",
+            "TOTORAL",
+            "SOBREMONTE",
+            "ISCHILIN"
+        ])) & (df_inscriptos['Edad'] < 45)
+    ]
+
+    total_dept_specific = df_dept_specific.shape[0]
+    total_cti = df_cti.shape[0]  # Asegurarse de definir `total_cti`
+    total_inscriptos = df_inscriptos.shape[0]  # Definir `total_inscriptos`
+    
+    # Pestaña inscripciones
+    st.markdown("### Programas Empleo +26")
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
     # Filtros de fechas para inscripciones
@@ -28,40 +73,67 @@ def show_inscriptions(df_inscripciones, file_date_inscripciones):
         return
     
     # Calcular edades en inscripciones
-    fecha_actual = pd.Timestamp(datetime.now())
     df_inscripciones['Edad'] = (fecha_actual - pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'])).dt.days // 365
 
-    # Métricas de adhesiones
+    # Métricas de edades en inscripciones
     count_26_or_less = df_inscripciones[df_inscripciones['Edad'] <= 26].shape[0]
     count_26_44 = df_inscripciones[(df_inscripciones['Edad'] > 26) & (df_inscripciones['Edad'] < 45)].shape[0]
     count_45 = df_inscripciones[df_inscripciones['Edad'] >= 45].shape[0]
 
-    # Cálculo total
-    total_inscripciones = df_inscripciones.shape[0]
-
     # Mostrar las métricas en columnas
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric(label="Adhesiones/postulantes", value=total_inscripciones-count_26_or_less)
+        st.metric(label="26 años o menos", value=count_26_or_less)
     with col2:
         st.metric(label="Entre 26 y 44 años", value=count_26_44)
     with col3:
         st.metric(label="45 años o más", value=count_45)
 
-    # Gráfico de Inscripciones por Fecha
-    if 'FEC_INSCRIPCION' in df_inscripciones.columns:
-        # Agrupar por fecha y contar inscripciones
+    # Métricas de Inscripciones y Matcheos
+    col1, col2, col3, col4, col5 = st.columns(5)
+    with col1:
+        st.metric(label="Inscriptos/Match", value=total_inscriptos)
+    with col2:
+        st.metric(label="Personas Únicas (CUIL)", value=unique_cuil_count)
+    with col3:
+        st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos_unique_cuil)
+    with col4:
+        st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
+    with col5:
+        st.markdown(
+            f"""
+            <div style="background-color:rgb(255, 209, 209); padding:10px; border-radius:5px;">
+                <strong>CTI</strong><br>
+                <span style="font-size:24px;">{total_cti}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+
+    # Verifica que las columnas de fecha estén presentes en los DataFrames
+    if 'FEC_INSCRIPCION' in df_inscripciones.columns and 'FEC_SIST' in df_inscriptos.columns:
+        # Agrupar por fecha y contar inscripciones para el primer conjunto (Inscripciones)
         inscripciones_por_fecha = df_inscripciones.groupby(df_inscripciones['FEC_INSCRIPCION'].dt.date).size().reset_index(name='Conteo')
-        inscripciones_por_fecha.columns = ['Fecha', 'Conteo']  # Renombrar columnas para evitar problemas en el gráfico
-
-        st.subheader("Inscripciones por Fecha")
-        fecha_chart = alt.Chart(inscripciones_por_fecha).mark_line().encode(
+        inscripciones_por_fecha.columns = ['Fecha', 'Conteo']
+        inscripciones_por_fecha['Tipo'] = 'Adhesiones'
+    
+        # Agrupar por fecha y contar inscripciones para el segundo conjunto (Match)
+        match_por_fecha = df_inscriptos.groupby(df_inscriptos['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
+        match_por_fecha.columns = ['Fecha', 'Conteo']
+        match_por_fecha['Tipo'] = 'Match'
+    
+        # Combinar ambos DataFrames en uno solo
+        datos_combinados = pd.concat([inscripciones_por_fecha, match_por_fecha])
+    
+        # Crear gráfico combinado
+        st.subheader("Postulaciones y Match por Fecha")
+        fecha_chart_combined = alt.Chart(datos_combinados).mark_line().encode(
             x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
-            y=alt.Y('Conteo:Q', title='Cantidad de Inscripciones'),
-            tooltip=['Fecha:T', 'Conteo:Q']
+            y=alt.Y('Conteo:Q', title='Cantidad'),
+            color='Tipo:N',  # Diferenciar por tipo (Inscripciones o Match)
+            tooltip=['Fecha:T', 'Conteo:Q', 'Tipo:N']
         ).properties(width=800, height=400)
-
-        st.altair_chart(fecha_chart, use_container_width=True)
+        st.altair_chart(fecha_chart_combined, use_container_width=True)
 
     # DNI por Localidad (Barras)
     if 'N_LOCALIDAD' in df_inscripciones.columns and 'N_DEPARTAMENTO' in df_inscripciones.columns:
@@ -84,6 +156,7 @@ def show_inscriptions(df_inscripciones, file_date_inscripciones):
         final_chart = bar_chart_localidad + text
         st.altair_chart(final_chart, use_container_width=True)
 
+    # Filtrar y mostrar datos por departamento
     st.markdown("### por Departamentos")
     if 'N_DEPARTAMENTO' in df_inscripciones.columns:
         departamentos = df_inscripciones['N_DEPARTAMENTO'].unique()
@@ -110,4 +183,3 @@ def show_inscriptions(df_inscripciones, file_date_inscripciones):
     with col1:
         st.subheader("Tabla de Adhesiones")
         st.dataframe(departamento_counts_sorted, hide_index=True)
-
