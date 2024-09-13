@@ -17,7 +17,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     df_inscriptos = df_inscriptos.copy()  # Asegurarse de trabajar con una copia
 
     # Filtrar solo los CTI
-    df_cti = df_inscriptos[df_inscriptos['ID_MOD_CONT_AFIP'] == 8.0]
+    df_cti = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 12]
 
     # Filtrar solo los registros con ID_EST_FICHA = 8
     df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
@@ -48,9 +48,9 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     df_inscriptos['Edad'] = (fecha_actual - df_inscriptos['FER_NAC']).dt.days // 365
 
     # Métricas de adhesiones
-    count_26_or_less = df_inscripciones[df_inscripciones['Edad'] <= 26].shape[0]
-    count_26_44 = df_inscripciones[(df_inscripciones['Edad'] > 26) & (df_inscripciones['Edad'] < 45)].shape[0]
-    count_45 = df_inscripciones[df_inscripciones['Edad'] >= 45].shape[0]
+    count_26_or_less = df_inscripciones[df_inscripciones['Edad'] <= 26]['CUIL'].nunique()
+    count_26_44 = df_inscripciones[(df_inscripciones['Edad'] > 26) & (df_inscripciones['Edad'] < 45)]['CUIL'].nunique()
+    count_45 = df_inscripciones[df_inscripciones['Edad'] >= 45]['CUIL'].nunique()
 
     # Calcular personas de 45 o más años en inscriptos
     count_45_inscriptos = df_inscriptos[df_inscriptos['Edad'] >= 45].shape[0]
@@ -58,6 +58,8 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
     # Calcular el número de CUIL únicos
     unique_cuil_count = df_inscriptos['CUIL'].nunique()
+    unique_cuil_cuit = df_empresas_seleccionadas['CUIL'].nunique()
+
 
     # Filtrar inscripciones para los departamentos específicos y que tengan menos de 45 años
     df_dept_specific = df_inscriptos[
@@ -82,7 +84,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Cálculo total
     total_inscripciones = df_inscripciones.shape[0]
     total_inscriptos = df_inscriptos.shape[0]
-    total_cti = df_cti.shape[0]
+    total_cti = df_cti['CUIL'].nunique()
     # Mostrar las métricas en columnas
     col1, col3, col4, col5, col6, col7 = st.columns(6)
     with col1:
@@ -91,7 +93,8 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.metric(label="Entre 26 y 44 años", value=count_26_44)
     with col4:
         st.metric(label="45 años o más", value=count_45)
-   
+    with col5:
+        st.metric(label="Personas con CUIT", value=unique_cuil_cuit)    
     with col6:
         st.markdown(
             f"""
@@ -111,16 +114,12 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
     with col1:
         st.metric(label="Inscriptos/Match", value=df_inscriptos.shape[0])
-    
     with col2:
         st.metric(label="Personas Únicas inscriptas (CUIL)", value=unique_cuil_count)
-
     with col3:
         st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
-    
     with col4:
         st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
-
 
 
     # Verifica que las columnas de fecha estén presentes en los DataFrames
@@ -134,9 +133,14 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         match_por_fecha = df_inscriptos.groupby(df_inscriptos['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
         match_por_fecha.columns = ['Fecha', 'Conteo']
         match_por_fecha['Tipo'] = 'Match'
+
+        # Agrupar por fecha y contar inscripciones para el segundo conjunto (Match)
+        cti_por_fecha = df_cti.groupby(df_cti['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
+        cti_por_fecha.columns = ['Fecha', 'Conteo']
+        cti_por_fecha['Tipo'] = 'cti'
     
         # Combinar ambos DataFrames en uno solo
-        datos_combinados = pd.concat([inscripciones_por_fecha, match_por_fecha])
+        datos_combinados = pd.concat([inscripciones_por_fecha, match_por_fecha, cti_por_fecha])
     
         # Crear gráfico combinado
         st.subheader("Postulaciones y Match por Fecha")
@@ -146,9 +150,25 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
             color='Tipo:N',  # Diferenciar por tipo (Inscripciones o Match)
             tooltip=['Fecha:T', 'Conteo:Q', 'Tipo:N']
         ).properties(width=800, height=400)
+
+        st.altair_chart(fecha_chart_combined, use_container_width=True)
+
+
+        # Calcular la suma acumulada de Conteo para cada tipo
+        datos_combinados['Conteo Acumulado'] = datos_combinados.groupby('Tipo')['Conteo'].cumsum()
+
+        # Crear gráfico acumulado
+        st.subheader("Conteo Acumulado por Fecha")
+        fecha_chart_acumulado = alt.Chart(datos_combinados).mark_line().encode(
+            x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
+            y=alt.Y('Conteo Acumulado:Q', title='Cantidad Acumulada'),
+            color='Tipo:N',  # Diferenciar por tipo (Inscripciones, Match, cti)
+            tooltip=['Fecha:T', 'Conteo Acumulado:Q', 'Tipo:N']
+        ).properties(width=800, height=400)
     
         # Mostrar el gráfico en Streamlit
-        st.altair_chart(fecha_chart_combined, use_container_width=True)
+        st.altair_chart(fecha_chart_acumulado, use_container_width=True)
+
     
         # DNI por Localidad (Barras)
         if 'N_LOCALIDAD' in df_inscripciones.columns and 'N_DEPARTAMENTO' in df_inscripciones.columns:
