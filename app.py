@@ -16,11 +16,11 @@ st.set_page_config(page_title="Reporte Empleo +26", layout="wide")
 # Nombres de los archivos en el bucket
 bucket_name = "direccion"
 blob_names = [
-    "vt_inscripciones_empleo.csv",     # DataFrame 0
-    "vt_empresas_adheridas.csv",        # DataFrame 1
-    "VT_REPORTES_PPP_MAS26.csv",        # DataFrame 2
-    "vt_inscripciones_empleo_e26empr.csv", # DataFrame 3
-    "vt_respuestas.csv"                 # DataFrame 4
+    "vt_inscripciones_empleo.txt",     # DataFrame 0
+    "vt_empresas_adheridas.txt",        # DataFrame 1
+    "vt_reportes_ppp_mas26.txt",        # DataFrame 2
+    "vt_inscripciones_empleo_e26empr.txt", # DataFrame 3
+    "vt_respuestas.txt"                 # DataFrame 4
 ]
 
 # Cargar datos desde el bucket
