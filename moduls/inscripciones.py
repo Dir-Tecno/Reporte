@@ -109,8 +109,25 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Añadir una sección de métricas con título "Matcheos"
     st.markdown("### Matcheos")
 
+    # Crear un DataFrame con dos métricas
+    data = pd.DataFrame({
+        'Métrica': ['Total CTI', 'Match unicos'],
+        'Cantidad': [total_cti, unique_cuil_count]  # Reemplaza estos valores con tus métricas reales
+    })
+
+    # Crear gráfico de torta (pie chart)
+    pie_chart = alt.Chart(data).mark_arc().encode(
+        theta=alt.Theta(field="Cantidad", type="quantitative"),
+        color=alt.Color(field="Métrica", type="nominal"),
+        tooltip=['Métrica', 'Cantidad']
+    ).properties(
+        width=400,
+        height=400
+    )
+
+
     # Crear las columnas para las métricas
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
         st.metric(label="Inscriptos/Match", value=df_inscriptos.shape[0])
@@ -120,6 +137,9 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
     with col4:
         st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
+    with col5:
+        st.altair_chart(pie_chart, use_container_width=True)
+
 
 
     # Verifica que las columnas de fecha estén presentes en los DataFrames
