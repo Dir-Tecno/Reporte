@@ -29,12 +29,12 @@ def show_companies(df_empresas, df_inscriptos, file_date):
 
     # Mostrar la tabla con columnas de igual ancho
     st.subheader("Tabla de Inscriptos por Empresa")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.dataframe(inscriptos_por_empresa, hide_index=True)
-    with col2:
-        df_display = df_empresas[['N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO']].drop_duplicates()
-        st.dataframe(df_display, hide_index=True)
+    #col1, col2 = st.columns(2)
+    #with col1:
+    #    st.dataframe(inscriptos_por_empresa, hide_index=True)
+    #with col1:
+    df_display = df_empresas[['N_LOCALIDAD','CUIT','N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO']].drop_duplicates()
+    st.dataframe(df_display, hide_index=True)
 
     if not df_empresas.empty:
         st.subheader("Distribución de Empleados por Empresa y Puesto")

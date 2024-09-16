@@ -238,6 +238,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.subheader("Tabla de Adhesiones")
         st.dataframe(departamento_counts_sorted, hide_index=True)
 
+    """
     # Agrupar y contar la cantidad de inscriptos por empresa
     inscriptos_por_empresa = df_inscriptos.groupby('RAZON_SOCIAL')['ID_FICHA'].count().reset_index(name='Cantidad de Inscriptos')
     inscriptos_por_empresa = inscriptos_por_empresa.sort_values(by='Cantidad de Inscriptos', ascending=False)
@@ -268,3 +269,4 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     with col2:
         st.subheader("CUIL que seleccionaron Empresa")
         st.dataframe(df_cuil_por_empresa_sorted, hide_index=True)
+"""
