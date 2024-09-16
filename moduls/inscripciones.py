@@ -17,7 +17,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     df_inscriptos = df_inscriptos.copy()  # Asegurarse de trabajar con una copia
 
     # Filtrar solo los CTI
-    df_cti = df_inscriptos[df_inscriptos['ID_MOD_CONT_AFIP'] == 8.0]
+    df_cti = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 12]
 
     # Filtrar solo los registros con ID_EST_FICHA = 8
     df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
@@ -109,8 +109,25 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Añadir una sección de métricas con título "Matcheos"
     st.markdown("### Matcheos")
 
+    # Crear un DataFrame con dos métricas
+    data = pd.DataFrame({
+        'Métrica': ['Total CTI', 'Match unicos'],
+        'Cantidad': [total_cti, unique_cuil_count]  # Reemplaza estos valores con tus métricas reales
+    })
+
+    # Crear gráfico de torta (pie chart)
+    pie_chart = alt.Chart(data).mark_arc().encode(
+        theta=alt.Theta(field="Cantidad", type="quantitative"),
+        color=alt.Color(field="Métrica", type="nominal"),
+        tooltip=['Métrica', 'Cantidad']
+    ).properties(
+        width=400,
+        height=400
+    )
+
+
     # Crear las columnas para las métricas
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
         st.metric(label="Inscriptos/Match", value=df_inscriptos.shape[0])
@@ -120,6 +137,9 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
     with col4:
         st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
+    with col5:
+        st.altair_chart(pie_chart, use_container_width=True)
+
 
 
     # Verifica que las columnas de fecha estén presentes en los DataFrames
@@ -133,9 +153,14 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         match_por_fecha = df_inscriptos.groupby(df_inscriptos['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
         match_por_fecha.columns = ['Fecha', 'Conteo']
         match_por_fecha['Tipo'] = 'Match'
+
+        # Agrupar por fecha y contar inscripciones para el segundo conjunto (Match)
+        cti_por_fecha = df_cti.groupby(df_cti['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
+        cti_por_fecha.columns = ['Fecha', 'Conteo']
+        cti_por_fecha['Tipo'] = 'cti'
     
         # Combinar ambos DataFrames en uno solo
-        datos_combinados = pd.concat([inscripciones_por_fecha, match_por_fecha])
+        datos_combinados = pd.concat([inscripciones_por_fecha, match_por_fecha, cti_por_fecha])
     
         # Crear gráfico combinado
         st.subheader("Postulaciones y Match por Fecha")
@@ -145,9 +170,25 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
             color='Tipo:N',  # Diferenciar por tipo (Inscripciones o Match)
             tooltip=['Fecha:T', 'Conteo:Q', 'Tipo:N']
         ).properties(width=800, height=400)
+
+        st.altair_chart(fecha_chart_combined, use_container_width=True)
+
+
+        # Calcular la suma acumulada de Conteo para cada tipo
+        datos_combinados['Conteo Acumulado'] = datos_combinados.groupby('Tipo')['Conteo'].cumsum()
+
+        # Crear gráfico acumulado
+        st.subheader("Conteo Acumulado por Fecha")
+        fecha_chart_acumulado = alt.Chart(datos_combinados).mark_line().encode(
+            x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
+            y=alt.Y('Conteo Acumulado:Q', title='Cantidad Acumulada'),
+            color='Tipo:N',  # Diferenciar por tipo (Inscripciones, Match, cti)
+            tooltip=['Fecha:T', 'Conteo Acumulado:Q', 'Tipo:N']
+        ).properties(width=800, height=400)
     
         # Mostrar el gráfico en Streamlit
-        st.altair_chart(fecha_chart_combined, use_container_width=True)
+        st.altair_chart(fecha_chart_acumulado, use_container_width=True)
+
     
         # DNI por Localidad (Barras)
         if 'N_LOCALIDAD' in df_inscripciones.columns and 'N_DEPARTAMENTO' in df_inscripciones.columns:
