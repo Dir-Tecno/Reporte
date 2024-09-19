@@ -109,13 +109,14 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
     # Añadir una sección de métricas con título "Matcheos"
     st.markdown("### Matcheos")
-
+    
+    """
     # Crear dos columnas para los botones de descarga
     col1, col2, col3, col4 = st.columns(4)
-
+    
     # Botón de descarga para df_inscriptos_filtered
 
-    """
+    
     with col1:
         buffer1 = io.BytesIO()
         col_inscripcion = ['ID_FICHA' ,'APELLIDO' ,'NOMBRE' ,'CUIL' ,'NUMERO_DOCUMENTO' ,'FER_NAC','EDAD', 'FEC_SIST' ,'CALLE' ,'NUMERO' ,'BARRIO' ,'N_LOCALIDAD', 'N_DEPARTAMENTO' ,'TEL_FIJO' ,'TEL_CELULAR' ,'CONTACTO' ,'MAIL' ,'ES_DISCAPACITADO' ,'CERTIF_DISCAP' ,'FEC_SIST' ,'MODALIDAD' ,'TAREAS' ,'ALTA_TEMPRANA' ,'ID_MOD_CONT_AFIP' ,'MOD_CONT_AFIP' ,'FEC_MODIF' ,'RAZON_SOCIAL' ,'EMP_CUIT' ,'CANT_EMP' ,'EMP_CALLE' ,'EMP_NUMERO' ,'EMP_N_LOCALIDAD' ,'EMP_N_DEPARTAMENTO' ,'EMP_CELULAR' ,'EMP_MAIL' ,'EMP_ES_COOPERATIVA' ,'EU_NOMBRE' ,'EMP_APELLIDO' ,'EU_MAIL' ,'EU_TELEFONO']
@@ -178,8 +179,8 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
     with col4:
         st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
-    with col5:
-        st.altair_chart(pie_chart, use_container_width=True)
+    #with col5:
+     #   st.altair_chart(pie_chart, use_container_width=True)
 
 
 
