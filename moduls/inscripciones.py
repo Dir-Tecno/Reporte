@@ -4,6 +4,7 @@ import altair as alt
 from datetime import datetime
 import io
 
+
 def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas, file_date_inscripciones, file_date_inscriptos, file_date_empresas):
     # Convertir las fechas en inscripciones
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
@@ -26,8 +27,11 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
     # Pestaña inscripciones
     st.markdown("### Programas Empleo +26")
+
+
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
+   
     # Filtros de fechas para inscripciones
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
         st.sidebar.header("Filtros de Fechas")
@@ -106,50 +110,10 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
             """, 
             unsafe_allow_html=True
         )
+    
 
     # Añadir una sección de métricas con título "Matcheos"
     st.markdown("### Matcheos")
-    
-    """
-    # Crear dos columnas para los botones de descarga
-    col1, col2, col3, col4 = st.columns(4)
-    
-    # Botón de descarga para df_inscriptos_filtered
-
-    
-    with col1:
-        buffer1 = io.BytesIO()
-        col_inscripcion = ['ID_FICHA' ,'APELLIDO' ,'NOMBRE' ,'CUIL' ,'NUMERO_DOCUMENTO' ,'FER_NAC','EDAD', 'FEC_SIST' ,'CALLE' ,'NUMERO' ,'BARRIO' ,'N_LOCALIDAD', 'N_DEPARTAMENTO' ,'TEL_FIJO' ,'TEL_CELULAR' ,'CONTACTO' ,'MAIL' ,'ES_DISCAPACITADO' ,'CERTIF_DISCAP' ,'FEC_SIST' ,'MODALIDAD' ,'TAREAS' ,'ALTA_TEMPRANA' ,'ID_MOD_CONT_AFIP' ,'MOD_CONT_AFIP' ,'FEC_MODIF' ,'RAZON_SOCIAL' ,'EMP_CUIT' ,'CANT_EMP' ,'EMP_CALLE' ,'EMP_NUMERO' ,'EMP_N_LOCALIDAD' ,'EMP_N_DEPARTAMENTO' ,'EMP_CELULAR' ,'EMP_MAIL' ,'EMP_ES_COOPERATIVA' ,'EU_NOMBRE' ,'EMP_APELLIDO' ,'EU_MAIL' ,'EU_TELEFONO']
-        
-        df_i = df_inscriptos[col_inscripcion]
-
-        with pd.ExcelWriter(buffer1, engine='openpyxl') as writer:
-            df_i.to_excel(writer, index=False, sheet_name='Inscriptos')
-            #writer.save()
-            buffer1.seek(0)
-
-        st.download_button(
-            label="Descargar Inscriptos REEL como Excel",
-            data=buffer1,
-            file_name='df_inscriptos.xlsx',
-            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-
-    # Botón de descarga para df_cti
-    with col2:
-        buffer2 = io.BytesIO()
-        df_c = df_cti[['ID_FICHA' ,'APELLIDO' ,'NOMBRE' ,'CUIL' ,'NUMERO_DOCUMENTO' ,'FER_NAC','EDAD', 'FEC_SIST' ,'CALLE' ,'NUMERO' ,'BARRIO' ,'N_LOCALIDAD', 'N_DEPARTAMENTO' ,'TEL_FIJO' ,'TEL_CELULAR' ,'CONTACTO' ,'MAIL' ,'ES_DISCAPACITADO' ,'CERTIF_DISCAP' ,'FEC_SIST' ,'MODALIDAD' ,'TAREAS' ,'ALTA_TEMPRANA' ,'ID_MOD_CONT_AFIP' ,'MOD_CONT_AFIP' ,'FEC_MODIF' ,'RAZON_SOCIAL' ,'EMP_CUIT' ,'CANT_EMP' ,'EMP_CALLE' ,'EMP_NUMERO' ,'EMP_N_LOCALIDAD' ,'EMP_N_DEPARTAMENTO' ,'EMP_CELULAR' ,'EMP_MAIL' ,'EMP_ES_COOPERATIVA' ,'EU_NOMBRE' ,'EMP_APELLIDO' ,'EU_MAIL' ,'EU_TELEFONO']]
-        with pd.ExcelWriter(buffer2, engine='openpyxl') as writer:
-            df_c.to_excel(writer, index=False, sheet_name='CTI')
-            #writer.save()
-            buffer2.seek(0)
-
-        st.download_button(
-            label="Descargar CTI como Excel",
-            data=buffer2,
-            file_name='df_cti.xlsx',
-            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
 
     # Crear un DataFrame con dos métricas
     data = pd.DataFrame({
@@ -166,7 +130,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         width=400,
         height=400
     )
-    """
+
 
     # Crear las columnas para las métricas
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -179,8 +143,8 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
     with col4:
         st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
-    #with col5:
-     #   st.altair_chart(pie_chart, use_container_width=True)
+    with col5:
+        st.altair_chart(pie_chart, use_container_width=True)
 
 
 
