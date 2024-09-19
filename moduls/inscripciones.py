@@ -110,7 +110,6 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Añadir una sección de métricas con título "Matcheos"
     st.markdown("### Matcheos")
     
-    """
     # Crear dos columnas para los botones de descarga
     col1, col2, col3, col4 = st.columns(4)
     
@@ -166,7 +165,6 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         width=400,
         height=400
     )
-    """
 
     # Crear las columnas para las métricas
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -179,8 +177,8 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
     with col4:
         st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
-    #with col5:
-     #   st.altair_chart(pie_chart, use_container_width=True)
+    with col5:
+        st.altair_chart(pie_chart, use_container_width=True)
 
 
 
