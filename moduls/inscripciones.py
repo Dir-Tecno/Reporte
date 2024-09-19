@@ -114,6 +114,8 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     col1, col2, col3, col4 = st.columns(4)
 
     # Botón de descarga para df_inscriptos_filtered
+
+    """
     with col1:
         buffer1 = io.BytesIO()
         col_inscripcion = ['ID_FICHA' ,'APELLIDO' ,'NOMBRE' ,'CUIL' ,'NUMERO_DOCUMENTO' ,'FER_NAC','EDAD', 'FEC_SIST' ,'CALLE' ,'NUMERO' ,'BARRIO' ,'N_LOCALIDAD', 'N_DEPARTAMENTO' ,'TEL_FIJO' ,'TEL_CELULAR' ,'CONTACTO' ,'MAIL' ,'ES_DISCAPACITADO' ,'CERTIF_DISCAP' ,'FEC_SIST' ,'MODALIDAD' ,'TAREAS' ,'ALTA_TEMPRANA' ,'ID_MOD_CONT_AFIP' ,'MOD_CONT_AFIP' ,'FEC_MODIF' ,'RAZON_SOCIAL' ,'EMP_CUIT' ,'CANT_EMP' ,'EMP_CALLE' ,'EMP_NUMERO' ,'EMP_N_LOCALIDAD' ,'EMP_N_DEPARTAMENTO' ,'EMP_CELULAR' ,'EMP_MAIL' ,'EMP_ES_COOPERATIVA' ,'EU_NOMBRE' ,'EMP_APELLIDO' ,'EU_MAIL' ,'EU_TELEFONO']
@@ -163,7 +165,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         width=400,
         height=400
     )
-
+    """
 
     # Crear las columnas para las métricas
     col1, col2, col3, col4, col5 = st.columns(5)
