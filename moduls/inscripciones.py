@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from datetime import datetime
+import io
+
 
 def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas, file_date_inscripciones, file_date_inscriptos, file_date_empresas):
     # Convertir las fechas en inscripciones
@@ -25,8 +27,11 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
     # Pestaña inscripciones
     st.markdown("### Programas Empleo +26")
+
+
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
+   
     # Filtros de fechas para inscripciones
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
         st.sidebar.header("Filtros de Fechas")
@@ -105,6 +110,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
             """, 
             unsafe_allow_html=True
         )
+    
 
     # Añadir una sección de métricas con título "Matcheos"
     st.markdown("### Matcheos")
