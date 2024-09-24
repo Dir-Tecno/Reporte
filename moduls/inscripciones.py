@@ -7,9 +7,6 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Convertir las fechas en inscripciones
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
         df_inscripciones['FEC_INSCRIPCION'] = pd.to_datetime(df_inscripciones['FEC_INSCRIPCION'], errors='coerce')
-    if 'FEC_NACIMIENTO' in df_inscripciones.columns:
-        df_inscripciones['FEC_NACIMIENTO'] = pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'], errors='coerce')
-        df_inscripciones = df_inscripciones.dropna(subset=['FEC_INSCRIPCION', 'FEC_NACIMIENTO'])
 
     # Convertir la columna FER_NAC en df_inscriptos a fecha
     df_inscriptos['FER_NAC'] = pd.to_datetime(df_inscriptos['FER_NAC'], errors='coerce')
@@ -22,7 +19,6 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Filtrar solo los registros con ID_EST_FICHA = 8
     df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
     
-
     # Pestaña inscripciones
     st.markdown("### Programas Empleo +26")
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
@@ -40,26 +36,17 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.write("No hay inscripciones para mostrar en el rango de fechas seleccionado.")
         return
     
-    # Calcular edades en inscripciones
-    fecha_actual = pd.Timestamp(datetime.now())
-    df_inscripciones['Edad'] = (fecha_actual - pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'])).dt.days // 365
-
-    # Calcular edades en inscriptos
-    df_inscriptos['Edad'] = (fecha_actual - df_inscriptos['FER_NAC']).dt.days // 365
-
-    # Métricas de adhesiones
-    count_26_or_less = df_inscripciones[df_inscripciones['Edad'] <= 26]['CUIL'].nunique()
-    count_26_44 = df_inscripciones[(df_inscripciones['Edad'] > 26) & (df_inscripciones['Edad'] < 45)]['CUIL'].nunique()
-    count_45 = df_inscripciones[df_inscripciones['Edad'] >= 45]['CUIL'].nunique()
+    # Métricas de adhesiones basadas en la columna EDAD
+    count_26_or_less = df_inscripciones[df_inscripciones['EDAD'] <= 26]['CUIL'].nunique()
+    count_26_44 = df_inscripciones[(df_inscripciones['EDAD'] > 26) & (df_inscripciones['EDAD'] < 45)]['CUIL'].nunique()
+    count_45 = df_inscripciones[df_inscripciones['EDAD'] >= 45]['CUIL'].nunique()
 
     # Calcular personas de 45 o más años en inscriptos
-    count_45_inscriptos = df_inscriptos[df_inscriptos['Edad'] >= 45].shape[0]
-
+    count_45_inscriptos = df_inscriptos[df_inscriptos['EDAD'] >= 45].shape[0]
 
     # Calcular el número de CUIL únicos
     unique_cuil_count = df_inscriptos['CUIL'].nunique()
     unique_cuil_cuit = df_empresas_seleccionadas['CUIL'].nunique()
-
 
     # Filtrar inscripciones para los departamentos específicos y que tengan menos de 45 años
     df_dept_specific = df_inscriptos[
@@ -76,7 +63,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
             "TOTORAL",
             "SOBREMONTE",
             "ISCHILIN"
-        ])) & (df_inscriptos['Edad'] < 45)
+        ])) & (df_inscriptos['EDAD'] < 45)
     ]
 
     total_dept_specific = df_dept_specific.shape[0]
@@ -85,6 +72,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     total_inscripciones = df_inscripciones.shape[0]
     total_inscriptos = df_inscriptos.shape[0]
     total_cti = df_cti['CUIL'].nunique()
+
     # Mostrar las métricas en columnas
     col1, col3, col4, col5, col6, col7 = st.columns(6)
     with col1:

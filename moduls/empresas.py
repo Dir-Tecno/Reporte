@@ -38,26 +38,35 @@ def show_companies(df_empresas, df_inscriptos, df_empresas_seleccionadas, file_d
     
     empresas_sin_match_detalles = empresas_sin_match_detalles.groupby('CUIT').first().reset_index()
 
-    
     # Ahora mostrar la métrica de empresas sin match
     total_empresas_sin_match = empresas_sin_match_detalles.shape[0]
     
-    # Colocar las dos métricas lado a lado
-    col1, col2 = st.columns(2)
+    # Filtrar solo los CTI
+    df_cti = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 12]
+    total_empresas_cti = df_cti['EMP_CUIT'].nunique()
+
+    # Colocar las métricas en tres columnas
+    col1, col2, col3 = st.columns(3)
     with col1:
         st.metric(label="Empresas Adheridas", value=total_empresas)
     with col2:
         st.metric(label="Empresas que no hicieron match", value=total_empresas_sin_match)
+    with col3:
+        st.metric(label="Empresas con CTI", value=total_empresas_cti)
 
     # Mostrar las tablas
-    st.subheader("Tablas de Inscriptos y Empresas sin Match")
-    col3, col4 = st.columns(2)
-    with col3:
-        st.dataframe(inscriptos_por_empresa, hide_index=True)
+    col4, col5, col6 = st.columns(3)
     with col4:
+        st.dataframe(inscriptos_por_empresa, hide_index=True)
+    with col5:
         st.dataframe(empresas_sin_match_detalles[['N_EMPRESA', 'CUIT']], hide_index=True)
+    with col6:
+        # Mostrar tabla de empresas con CTI
+        empresas_cti = df_cti[['RAZON_SOCIAL', 'EMP_CUIT']].drop_duplicates()
+        st.dataframe(empresas_cti, hide_index=True)
 
     # Mostrar tabla de detalles de empresas
+    st.subheader("CUPOS POR  EMPRESA")
     df_display = df_empresas[['N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO']].drop_duplicates()
     st.dataframe(df_display, hide_index=True)
 
@@ -85,6 +94,3 @@ def show_companies(df_empresas, df_inscriptos, df_empresas_seleccionadas, file_d
         plt.imshow(wordcloud, interpolation='bilinear')
         plt.axis("off")
         st.pyplot(plt)
-
-
-        
