@@ -33,7 +33,7 @@ def show_companies(df_empresas, df_inscriptos, file_date):
     #with col1:
     #    st.dataframe(inscriptos_por_empresa, hide_index=True)
     #with col1:
-    df_display = df_empresas[['N_LOCALIDAD','CUIT','N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO']].drop_duplicates()
+    df_display = df_empresas[['N_LOCALIDAD','CUIT','N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO', 'VACANTES']].drop_duplicates()
     st.dataframe(df_display, hide_index=True)
 
     if not df_empresas.empty:
