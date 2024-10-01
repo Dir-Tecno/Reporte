@@ -20,7 +20,7 @@ def calculate_cupo(cantidad_empleados):
 def show_companies(df_empresas, df_inscriptos, file_date):
     total_empresas = df_empresas['CUIT'].nunique()
     # Agrupar y contar la cantidad de inscriptos por empresa
-    inscriptos_por_empresa = df_inscriptos.groupby('RAZON_SOCIAL')['ID_FICHA'].count().reset_index(name='Inscriptos')
+    inscriptos_por_empresa = df_inscriptos.groupby('EMP_CUIT')['ID_FICHA'].count().reset_index(name='Inscriptos')
     inscriptos_por_empresa = inscriptos_por_empresa.sort_values(by='Inscriptos', ascending=False)
     st.metric(label="Empresas Adheridas", value=total_empresas)
 
@@ -33,7 +33,10 @@ def show_companies(df_empresas, df_inscriptos, file_date):
     #with col1:
     #    st.dataframe(inscriptos_por_empresa, hide_index=True)
     #with col1:
-    df_display = df_empresas[['N_LOCALIDAD','CUIT','N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO', 'VACANTES']].drop_duplicates()
+
+    df_display = df_empresas.merge(inscriptos_por_empresa, how='left', left_on='CUIT', right_on='EMP_CUIT')
+    df_display = df_display[['N_LOCALIDAD','CUIT','N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO', 'VACANTES','Inscriptos']].drop_duplicates()
+
     st.dataframe(df_display, hide_index=True)
 
     if not df_empresas.empty:
