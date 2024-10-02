@@ -6,19 +6,23 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
 def calculate_cupo(cantidad_empleados):
-    if cantidad_empleados <= 7:
-        return math.floor(2)
+    if cantidad_empleados == 0:
+        return 1 
+    elif cantidad_empleados <= 7:
+        return 2
     elif cantidad_empleados <= 30:
-        return math.floor(0.2 * cantidad_empleados)
+        return int(0.2 * cantidad_empleados)
     elif cantidad_empleados <= 165:
-        return math.floor(0.15 * cantidad_empleados)
+        return int(0.15 * cantidad_empleados)
     elif cantidad_empleados <= 535:
-        return math.floor(0.1 * cantidad_empleados)
+        return int(0.1 * cantidad_empleados)
     else:
-        return math.floor(0.1 * cantidad_empleados)
+        return int(0.1 * cantidad_empleados)
+
 
 def show_companies(df_empresas, df_inscriptos, file_date):
     total_empresas = df_empresas['CUIT'].nunique()
+    
     # Agrupar y contar la cantidad de inscriptos por empresa
     inscriptos_por_empresa = df_inscriptos.groupby('EMP_CUIT')['ID_FICHA'].count().reset_index(name='Inscriptos')
     inscriptos_por_empresa = inscriptos_por_empresa.sort_values(by='Inscriptos', ascending=False)
@@ -29,21 +33,17 @@ def show_companies(df_empresas, df_inscriptos, file_date):
 
     # Mostrar la tabla con columnas de igual ancho
     st.subheader("Tabla de Inscriptos por Empresa")
-    #col1, col2 = st.columns(2)
-    #with col1:
-    #    st.dataframe(inscriptos_por_empresa, hide_index=True)
-    #with col1:
 
     df_display = df_empresas.merge(inscriptos_por_empresa, how='left', left_on='CUIT', right_on='EMP_CUIT')
-    df_display = df_display[['N_LOCALIDAD','CUIT','N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO', 'VACANTES','Inscriptos']].drop_duplicates()
+    df_display = df_display[['N_LOCALIDAD', 'CUIT', 'N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO', 'VACANTES', 'Inscriptos']].drop_duplicates()
 
     st.dataframe(df_display, hide_index=True)
 
     if not df_empresas.empty:
         st.subheader("Distribución de Empleados por Empresa y Puesto")
 
-        # Agrupamos los datos por empresa y puesto de empleo, sumando la cantidad de empleados
-        df_puesto_agg = df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS':'sum'}).reset_index()
+        # Agrupamos los datos por empresa y puesto de empleo
+        df_puesto_agg = df_empresas.groupby(['N_EMPRESA', 'N_PUESTO_EMPLEO']).agg({'CANTIDAD_EMPLEADOS': 'sum'}).reset_index()
 
         # Filtramos para mostrar solo las 10 empresas con mayor cantidad de empleados
         top_10_empresas = df_puesto_agg.groupby('N_EMPRESA')['CANTIDAD_EMPLEADOS'].sum().nlargest(10).index
@@ -74,4 +74,4 @@ def show_companies(df_empresas, df_inscriptos, file_date):
         plt.imshow(wordcloud, interpolation='bilinear')
         plt.axis("off")
         st.pyplot(plt)
-
+        plt.clf()  # Limpiar la figura para evitar acumulación
