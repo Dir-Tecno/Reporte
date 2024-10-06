@@ -21,6 +21,9 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Filtrar solo los CTI
     df_cti = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 12]
 
+    # Filtrar solo los BENEFICIARIOS CTI
+    df_cti_benef = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 13]
+
     # Filtrar solo los registros con ID_EST_FICHA = 8
     df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
     
@@ -90,22 +93,39 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     total_inscripciones = df_inscripciones.shape[0]
     total_inscriptos = df_inscriptos.shape[0]
     total_cti = df_cti['CUIL'].nunique()
+    total_cti_benef = df_cti_benef['CUIL'].nunique()
     # Mostrar las métricas en columnas
-    col1, col3, col4, col5, col6, col7 = st.columns(6)
+    st.markdown("### Postulaciones/adhesiones")
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric(label="Adhesiones/postulantes", value=total_inscripciones-count_26_or_less)
-    with col3:
+    with col2:
         st.metric(label="Entre 26 y 44 años", value=count_26_44)
-    with col4:
+    with col3:
         st.metric(label="45 años o más", value=count_45)
-    with col5:
-        st.metric(label="Personas con CUIT", value=unique_cuil_cuit)    
-    with col6:
+    with col4:
+        st.metric(label="Personas con CUIT", value=unique_cuil_cuit)
+        #st.metric(label="Fichas", value=total_inscriptos)
+
+    st.markdown("### CTI")
+    col1, col2 = st.columns(2)
+    
+    with col1:
         st.markdown(
             f"""
             <div style="background-color:rgb(255 209 209);padding:10px;border-radius:5px;">
-                <strong>CTI</strong><br>
+                <strong>CTI INSCR.</strong><br>
                 <span style="font-size:24px;">{total_cti}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col2:
+        st.markdown(
+            f"""
+            <div style="background-color:rgb(165 228 156);padding:10px;border-radius:5px;">
+                <strong>CTI BENEF.</strong><br>
+                <span style="font-size:24px;">{total_cti_benef}</span>
             </div>
             """, 
             unsafe_allow_html=True
@@ -114,12 +134,22 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
     # Añadir una sección de métricas con título "Matcheos"
     st.markdown("### Matcheos")
-    
-    # Crear dos columnas para los botones de descarga
+        # Crear las columnas para las métricas
     col1, col2, col3, col4 = st.columns(4)
-    
-    # Botón de descarga para df_inscriptos_filtered
 
+    with col1:
+        st.metric(label="Inscriptos/Match", value=df_inscriptos.shape[0])
+    with col2:
+        st.metric(label="Personas Únicas inscriptas (CUIL)", value=unique_cuil_count)
+    with col3:
+        st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
+    with col4:
+        st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
+    # Crear dos columnas para los botones de descarga
+
+    st.markdown("### Descarga de bases")
+    col1, col2 = st.columns(2)
+    
     
     with col1:
         buffer1 = io.BytesIO()
@@ -156,6 +186,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         )
 
     # Crear un DataFrame con dos métricas
+    """
     data = pd.DataFrame({
         'Métrica': ['Total CTI', 'Match unicos'],
         'Cantidad': [total_cti, unique_cuil_count]  # Reemplaza estos valores con tus métricas reales
@@ -170,20 +201,9 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         width=400,
         height=400
     )
+    """
 
-    # Crear las columnas para las métricas
-    col1, col2, col3, col4, col5 = st.columns(5)
 
-    with col1:
-        st.metric(label="Inscriptos/Match", value=df_inscriptos.shape[0])
-    with col2:
-        st.metric(label="Personas Únicas inscriptas (CUIL)", value=unique_cuil_count)
-    with col3:
-        st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
-    with col4:
-        st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
-    with col5:
-        st.altair_chart(pie_chart, use_container_width=True)
 
 
 
