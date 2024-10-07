@@ -1,3 +1,4 @@
 .streamlit/secrets.toml
 moduls/__pycache__
 venv/
+run_streamlit.sh

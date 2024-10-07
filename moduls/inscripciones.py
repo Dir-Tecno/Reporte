@@ -21,6 +21,9 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Filtrar solo los CTI
     df_cti = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 12]
 
+    # df_descarga_cti
+    df_cti_descarga = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin([12, 13])]
+
     # Filtrar solo los BENEFICIARIOS CTI
     df_cti_benef = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 13]
 
@@ -172,7 +175,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     # Botón de descarga para df_cti
     with col2:
         buffer2 = io.BytesIO()
-        df_c = df_cti[['ID_FICHA' ,'APELLIDO' ,'NOMBRE' ,'CUIL' ,'NUMERO_DOCUMENTO' ,'FER_NAC','EDAD', 'FEC_SIST' ,'CALLE' ,'NUMERO' ,'BARRIO' ,'N_LOCALIDAD', 'N_DEPARTAMENTO' ,'TEL_FIJO' ,'TEL_CELULAR' ,'CONTACTO' ,'MAIL' ,'ES_DISCAPACITADO' ,'CERTIF_DISCAP' ,'FEC_SIST' ,'MODALIDAD' ,'TAREAS' ,'ALTA_TEMPRANA' ,'ID_MOD_CONT_AFIP' ,'MOD_CONT_AFIP' ,'FEC_MODIF' ,'RAZON_SOCIAL' ,'EMP_CUIT' ,'CANT_EMP' ,'EMP_CALLE' ,'EMP_NUMERO' ,'EMP_N_LOCALIDAD' ,'EMP_N_DEPARTAMENTO' ,'EMP_CELULAR' ,'EMP_MAIL' ,'EMP_ES_COOPERATIVA' ,'EU_NOMBRE' ,'EMP_APELLIDO' ,'EU_MAIL' ,'EU_TELEFONO']]
+        df_c = df_cti_descarga[['ID_FICHA' ,'APELLIDO' ,'NOMBRE' ,'CUIL' ,'NUMERO_DOCUMENTO' ,'FER_NAC','EDAD', 'FEC_SIST' ,'CALLE' ,'NUMERO' ,'BARRIO' ,'N_LOCALIDAD', 'N_DEPARTAMENTO' ,'TEL_FIJO' ,'TEL_CELULAR' ,'CONTACTO' ,'MAIL' ,'ES_DISCAPACITADO' ,'CERTIF_DISCAP' ,'FEC_SIST' ,'MODALIDAD' ,'TAREAS' ,'ALTA_TEMPRANA' ,'ID_MOD_CONT_AFIP' ,'MOD_CONT_AFIP' ,'FEC_MODIF' ,'RAZON_SOCIAL' ,'EMP_CUIT' ,'CANT_EMP' ,'EMP_CALLE' ,'EMP_NUMERO' ,'EMP_N_LOCALIDAD' ,'EMP_N_DEPARTAMENTO' ,'EMP_CELULAR' ,'EMP_MAIL' ,'EMP_ES_COOPERATIVA' ,'EU_NOMBRE' ,'EMP_APELLIDO' ,'EU_MAIL' ,'EU_TELEFONO']]
         with pd.ExcelWriter(buffer2, engine='openpyxl') as writer:
             df_c.to_excel(writer, index=False, sheet_name='CTI')
             #writer.save()
