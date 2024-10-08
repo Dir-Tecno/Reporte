@@ -6,7 +6,7 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
 def calculate_cupo(cantidad_empleados):
-    if cantidad_empleados == 0:
+    if cantidad_empleados <= 1:
         return 1 
     elif cantidad_empleados <= 7:
         return 2
@@ -14,8 +14,6 @@ def calculate_cupo(cantidad_empleados):
         return int(0.2 * cantidad_empleados)
     elif cantidad_empleados <= 165:
         return int(0.15 * cantidad_empleados)
-    elif cantidad_empleados <= 535:
-        return int(0.1 * cantidad_empleados)
     else:
         return int(0.1 * cantidad_empleados)
 
