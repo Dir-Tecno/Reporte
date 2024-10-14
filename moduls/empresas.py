@@ -29,11 +29,15 @@ def show_companies(df_empresas, df_inscriptos, file_date):
     # Calcular la columna 'CUPO'
     df_empresas['CUPO'] = df_empresas['CANTIDAD_EMPLEADOS'].apply(calculate_cupo)
 
+    # Aseguramos que las columnas 'CUIT' y 'EMP_CUIT' sean del mismo tipo
+    df_empresas['CUIT'] = df_empresas['CUIT'].astype(str)
+    inscriptos_por_empresa['EMP_CUIT'] = inscriptos_por_empresa['EMP_CUIT'].astype(str)
+
     # Mostrar la tabla con columnas de igual ancho
-    st.subheader("Tabla de Inscriptos por Empresa")
+    st.subheader("Empresas")
 
     df_display = df_empresas.merge(inscriptos_por_empresa, how='left', left_on='CUIT', right_on='EMP_CUIT')
-    df_display = df_display[['N_LOCALIDAD', 'CUIT', 'N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO', 'VACANTES', 'Inscriptos']].drop_duplicates()
+    df_display = df_display[['N_LOCALIDAD', 'CUIT', 'N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO', 'VACANTES', 'Inscriptos','IMP GANANCIAS', 'IMP IVA', 'MONOTRIBUTO', 'INTEGRANTE', 'EMPLEADOR', 'ACTIVIDAD MONOTRIBUTO']].drop_duplicates()
 
     st.dataframe(df_display, hide_index=True)
 

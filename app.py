@@ -34,7 +34,7 @@ with tab1:
 
 with tab2:
     # Mostrar empresas
-    show_companies(dfs[1], dfs[2], file_dates[1])
+    show_companies(dfs[1], dfs[2],  file_dates[1])
 
 with tab3:
     # Mostrar respuestas
