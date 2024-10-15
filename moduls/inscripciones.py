@@ -22,10 +22,13 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     df_cti = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 12]
 
     # df_descarga_cti
-    df_cti_descarga = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin([12, 13])]
+    df_cti_descarga = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin([12, 13, 14])]
 
     # Filtrar solo los BENEFICIARIOS CTI
     df_cti_benef = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 13]
+
+    # Filtrar solo los BENEFICIARIOS CTI
+    df_cti_alta = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 14]
 
     # Filtrar solo los registros con ID_EST_FICHA = 8
     df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
@@ -97,6 +100,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     total_inscriptos = df_inscriptos.shape[0]
     total_cti = df_cti['CUIL'].nunique()
     total_cti_benef = df_cti_benef['CUIL'].nunique()
+    total_cti_alta = df_cti_alta['CUIL'].nunique()
     # Mostrar las métricas en columnas
     st.markdown("### Postulaciones/adhesiones")
     col1, col2, col3, col4 = st.columns(4)
@@ -111,7 +115,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         #st.metric(label="Fichas", value=total_inscriptos)
 
     st.markdown("### CTI")
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown(
@@ -126,9 +130,19 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     with col2:
         st.markdown(
             f"""
-            <div style="background-color:rgb(165 228 156);padding:10px;border-radius:5px;">
+            <div style="background-color:rgb(173, 216, 230);padding:10px;border-radius:5px;">
                 <strong>CTI BENEF.</strong><br>
                 <span style="font-size:24px;">{total_cti_benef}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col3:
+        st.markdown(
+            f"""
+            <div style="background-color:rgb(165 228 156);padding:10px;border-radius:5px;">
+                <strong>CTI ALTA TEMPRANA</strong><br>
+                <span style="font-size:24px;">{total_cti_alta}</span>
             </div>
             """, 
             unsafe_allow_html=True

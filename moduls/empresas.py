@@ -5,7 +5,10 @@ import math
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
-def calculate_cupo(cantidad_empleados):
+def calculate_cupo(cantidad_empleados, empleador):
+    # Si el empleador es 'N', el cupo es 1
+    if empleador == 'N':
+        return 1
     if cantidad_empleados <= 1:
         return 1 
     elif cantidad_empleados <= 7:
@@ -26,8 +29,8 @@ def show_companies(df_empresas, df_inscriptos, file_date):
     inscriptos_por_empresa = inscriptos_por_empresa.sort_values(by='Inscriptos', ascending=False)
     st.metric(label="Empresas Adheridas", value=total_empresas)
 
-    # Calcular la columna 'CUPO'
-    df_empresas['CUPO'] = df_empresas['CANTIDAD_EMPLEADOS'].apply(calculate_cupo)
+    # Calcular la columna 'CUPO' usando ambos argumentos
+    df_empresas['CUPO'] = df_empresas.apply(lambda row: calculate_cupo(row['CANTIDAD_EMPLEADOS'], row['EMPLEADOR']), axis=1)
 
     # Reemplazar el carácter "-" por "" en la columna 'EMP_CUIT'
     inscriptos_por_empresa['EMP_CUIT'] = inscriptos_por_empresa['EMP_CUIT'].str.replace('-', '')
@@ -81,3 +84,4 @@ def show_companies(df_empresas, df_inscriptos, file_date):
         plt.axis("off")
         st.pyplot(plt)
         plt.clf()  # Limpiar la figura para evitar acumulación
+        
