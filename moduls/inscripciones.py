@@ -54,28 +54,22 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.write("No hay inscripciones para mostrar en el rango de fechas seleccionado.")
         return
     
+
     # Calcular edades en inscripciones
     fecha_actual = pd.Timestamp(datetime.now())
-    df_inscripciones['Edad'] = (fecha_actual - pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'])).dt.days // 365
 
     # Calcular edades en inscriptos
     df_inscriptos['Edad'] = (fecha_actual - df_inscriptos['FER_NAC']).dt.days // 365
 
-    # Métricas de adhesiones
-    count_26_or_less = df_inscripciones[df_inscripciones['Edad'] <= 26]['CUIL'].nunique()
-    count_26_44 = df_inscripciones[(df_inscripciones['Edad'] > 26) & (df_inscripciones['Edad'] < 45)]['CUIL'].nunique()
-    count_45 = df_inscripciones[df_inscripciones['Edad'] >= 45]['CUIL'].nunique()
-
     # Calcular personas de 45 o más años en inscriptos
     count_45_inscriptos = df_inscriptos[df_inscriptos['Edad'] >= 45].shape[0]
-
+    # Calcular personas de entre 26 y 44 en inscriptos
+    count_26_44 = df_inscriptos[(df_inscriptos['Edad'] > 26) & (df_inscriptos['Edad'] < 45)]['CUIL'].nunique()
 
     # Calcular el número de CUIL únicos
     unique_cuil_count = df_inscriptos['CUIL'].nunique()
-    #unique_cuil_cuit = df_inscriptos['CUIL'].nunique()
-
-
-    # Filtrar inscripciones para los departamentos específicos y que tengan menos de 45 años
+     
+    # Filtrar inscriptos para los departamentos específicos y que tengan menos de 45 años
     df_dept_specific = df_inscriptos[
         (df_inscriptos['N_DEPARTAMENTO'].isin([
             'PRESIDENTE ROQUE SAENZ PEÑA', 
@@ -96,22 +90,11 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     total_dept_specific = df_dept_specific.shape[0]
 
     # Cálculo total
-    total_inscripciones = df_inscripciones.shape[0]
+    #total_inscripciones = df_inscripciones.shape[0]
     total_inscriptos = df_inscriptos.shape[0]
     total_cti = df_cti['CUIL'].nunique()
     total_cti_benef = df_cti_benef['CUIL'].nunique()
     total_cti_alta = df_cti_alta['CUIL'].nunique()
-    # Mostrar las métricas en columnas
-    st.markdown("### Postulaciones/adhesiones")
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric(label="Adhesiones/postulantes", value=total_inscripciones-count_26_or_less)
-    with col2:
-        st.metric(label="Entre 26 y 44 años", value=count_26_44)
-    with col3:
-        st.metric(label="45 años o más", value=count_45)
-    with col4:
-        st.metric(label="Personas Unicas Inscriptos REEL", value=unique_cuil_count)
 
     st.markdown("### CTI")
     col1, col2, col3 = st.columns(3)
@@ -150,19 +133,63 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
     # Añadir una sección de métricas con título "Matcheos"
     st.markdown("### Matcheos")
+
         # Crear las columnas para las métricas
-    col1, col3, col4 = st.columns(3)
+    col1,col2, col3, col4,col5 = st.columns(5)
 
     with col1:
-        st.metric(label="Inscriptos/Match", value=df_inscriptos.shape[0])
-    #with col2:
-        #st.metric(label="Personas Unicas Inscriptos REEL", value=unique_cuil_count)
+        st.markdown(
+            f"""
+            <div style="background-color:white;padding:10px;border-radius:5px;">
+                <strong>Fichas/Inscriptos</strong><br>
+                <span style="font-size:24px;">{df_inscriptos.shape[0]}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col2:
+        st.markdown(
+            f"""
+            <div style="background-color:rgb(211, 211, 211);padding:10px;border-radius:5px;">
+                <strong>Personas Unicas Inscriptos REEL</strong><br>
+                <span style="font-size:24px;">{unique_cuil_count}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
     with col3:
-        st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
+        st.markdown(
+            f"""
+            <div style="background-color:white;padding:10px;border-radius:5px;">
+                <strong>Inscriptos entre 26 y 44 años</strong><br>
+                <span style="font-size:24px;">{count_26_44}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
     with col4:
-        st.metric(label="Inscriptos Zonas Favorecidas", value=total_dept_specific)
-    # Crear dos columnas para los botones de descarga
+        st.markdown(
+            f"""
+            <div style="background-color:white;padding:10px;border-radius:5px;">
+                <strong>Inscriptos 45 años o más</strong><br>
+                <span style="font-size:24px;">{count_45_inscriptos}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col5:
+        st.markdown(
+            f"""
+            <div style="background-color:white;padding:10px;border-radius:5px;">
+                <strong>Inscriptos Zonas Favorecidas</strong><br>
+                <span style="font-size:24px;">{total_dept_specific}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        ) 
 
+
+    # Crear dos columnas para los botones de descarga
     st.markdown("### Descarga de bases")
     col1, col2 = st.columns(2)
     
@@ -200,27 +227,6 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
             file_name='df_cti.xlsx',
             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-
-    # Crear un DataFrame con dos métricas
-    """
-    data = pd.DataFrame({
-        'Métrica': ['Total CTI', 'Match unicos'],
-        'Cantidad': [total_cti, unique_cuil_count]  # Reemplaza estos valores con tus métricas reales
-    })
-
-    # Crear gráfico de torta (pie chart)
-    pie_chart = alt.Chart(data).mark_arc().encode(
-        theta=alt.Theta(field="Cantidad", type="quantitative"),
-        color=alt.Color(field="Métrica", type="nominal"),
-        tooltip=['Métrica', 'Cantidad']
-    ).properties(
-        width=400,
-        height=400
-    )
-    """
-
-
-
 
 
     # Verifica que las columnas de fecha estén presentes en los DataFrames
@@ -318,36 +324,3 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     with col1:
         st.subheader("Tabla de Adhesiones")
         st.dataframe(departamento_counts_sorted, hide_index=True)
-
-    """
-    # Agrupar y contar la cantidad de inscriptos por empresa
-    inscriptos_por_empresa = df_inscriptos.groupby('RAZON_SOCIAL')['ID_FICHA'].count().reset_index(name='Cantidad de Inscriptos')
-    inscriptos_por_empresa = inscriptos_por_empresa.sort_values(by='Cantidad de Inscriptos', ascending=False)
-
-    # Agrupar y contar la cantidad de CUIL por empresa
-    df_cuil_por_empresa_sorted = df_empresas_seleccionadas.groupby(['RAZON_SOCIAL']).agg({'CUIL': 'count'}).reset_index()
-    df_cuil_por_empresa_sorted.columns = ['RAZON_SOCIAL', 'Cantidad_CUIL']
-    df_cuil_por_empresa_sorted = df_cuil_por_empresa_sorted.sort_values(by='Cantidad_CUIL', ascending=False)
-
-    # Gráfico de cantidad de inscriptos por empresa
-    st.subheader("Cantidad de Inscriptos por Empresa")
-    st.metric(label="Inscriptos/Matchs",value=total_inscriptos)
-    empresa_chart = alt.Chart(inscriptos_por_empresa).mark_bar().encode(
-        y=alt.Y('RAZON_SOCIAL:N', title='Empresa', sort='-x'),
-        x=alt.X('Cantidad de Inscriptos:Q', title='Cantidad de Inscriptos'),
-        color=alt.Color('RAZON_SOCIAL:N', legend=None)
-    ).properties(width=600, height=400)
-
-    st.altair_chart(empresa_chart, use_container_width=True)
-
-    # Dividir en dos columnas con igual ancho
-    col1, col2 = st.columns([1,1])
-
-    with col1:
-        st.subheader("Tabla de Inscriptos por Empresa")
-        st.dataframe(inscriptos_por_empresa, hide_index=True)
-
-    with col2:
-        st.subheader("CUIL que seleccionaron Empresa")
-        st.dataframe(df_cuil_por_empresa_sorted, hide_index=True)
-"""
