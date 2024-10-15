@@ -72,7 +72,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
 
     # Calcular el número de CUIL únicos
     unique_cuil_count = df_inscriptos['CUIL'].nunique()
-    unique_cuil_cuit = df_empresas_seleccionadas['CUIL'].nunique()
+    unique_cuil_cuit = df_inscriptos['CUIL'].nunique()
 
 
     # Filtrar inscripciones para los departamentos específicos y que tengan menos de 45 años
@@ -103,15 +103,15 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     total_cti_alta = df_cti_alta['CUIL'].nunique()
     # Mostrar las métricas en columnas
     st.markdown("### Postulaciones/adhesiones")
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3= st.columns(3)
     with col1:
         st.metric(label="Adhesiones/postulantes", value=total_inscripciones-count_26_or_less)
     with col2:
         st.metric(label="Entre 26 y 44 años", value=count_26_44)
     with col3:
         st.metric(label="45 años o más", value=count_45)
-    with col4:
-        st.metric(label="Personas con CUIT", value=unique_cuil_cuit)
+   #with col4:
+        #st.metric(label="Personas con CUIT", value=unique_cuil_cuit)
         #st.metric(label="Fichas", value=total_inscriptos)
 
     st.markdown("### CTI")
@@ -131,7 +131,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
         st.markdown(
             f"""
             <div style="background-color:rgb(173, 216, 230);padding:10px;border-radius:5px;">
-                <strong>CTI BENEF.</strong><br>
+                <strong>CTI VALIDADOS</strong><br>
                 <span style="font-size:24px;">{total_cti_benef}</span>
             </div>
             """, 
@@ -157,7 +157,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     with col1:
         st.metric(label="Inscriptos/Match", value=df_inscriptos.shape[0])
     with col2:
-        st.metric(label="Personas Únicas inscriptas (CUIL)", value=unique_cuil_count)
+        st.metric(label="Personas Unicas Inscriptos REEL", value=unique_cuil_count)
     with col3:
         st.metric(label="Inscriptos 45 años o más", value=count_45_inscriptos)
     with col4:
