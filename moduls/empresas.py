@@ -23,11 +23,10 @@ def calculate_cupo(cantidad_empleados, empleador):
 
 def show_companies(df_empresas, df_inscriptos, file_date):
     total_empresas = df_empresas['CUIT'].nunique()
-    
     # Agrupar y contar la cantidad de inscriptos por empresa
     inscriptos_por_empresa = df_inscriptos.groupby('EMP_CUIT')['ID_FICHA'].count().reset_index(name='Inscriptos')
     inscriptos_por_empresa = inscriptos_por_empresa.sort_values(by='Inscriptos', ascending=False)
-    st.metric(label="Empresas Adheridas", value=total_empresas)
+
 
     # Calcular la columna 'CUPO' usando ambos argumentos
     df_empresas['CUPO'] = df_empresas.apply(lambda row: calculate_cupo(row['CANTIDAD_EMPLEADOS'], row['EMPLEADOR']), axis=1)
@@ -40,13 +39,33 @@ def show_companies(df_empresas, df_inscriptos, file_date):
     inscriptos_por_empresa['EMP_CUIT'] = inscriptos_por_empresa['EMP_CUIT'].astype(str)
     
     # Mostrar la tabla con columnas de igual ancho
-    st.subheader("Empresas")
     
     df_display = df_empresas.merge(inscriptos_por_empresa, how='left', left_on='CUIT', right_on='EMP_CUIT')
 
-    df_display = df_display[['N_LOCALIDAD', 'CUIT', 'N_EMPRESA', 'CANTIDAD_EMPLEADOS', 'CUPO', 'VACANTES', 'Inscriptos','IMP GANANCIAS', 'IMP IVA', 'MONOTRIBUTO', 'INTEGRANTE', 'EMPLEADOR', 'ACTIVIDAD MONOTRIBUTO']].drop_duplicates()
 
+    # Añadir nueva columna 'Inscriptos_Aceptados'
+    df_display['Inscriptos_para_Aceptar'] = df_display.apply(lambda row: min(row['Inscriptos'], row['CUPO']), axis=1)
+
+    df_display = df_display[['N_LOCALIDAD', 'CUIT','N_EMPRESA', 'CANTIDAD_EMPLEADOS','VACANTES', 'CUPO',  'Inscriptos','Inscriptos_para_Aceptar','IMP GANANCIAS', 'IMP IVA', 'MONOTRIBUTO', 'INTEGRANTE', 'EMPLEADOR', 'ACTIVIDAD MONOTRIBUTO']].drop_duplicates()
+    df_display = df_display.sort_values(by='Inscriptos_para_Aceptar', ascending=False)
+    
+    # Calcular la suma de Inscriptos_para_Aceptar
+    total_inscriptos_para_aceptar = int(df_display['Inscriptos_para_Aceptar'].sum())
+
+    # Crear dos columnas
+    col1, col2 = st.columns(2)
+
+    # En la primera columna, mostrar la métrica de Empresas Adheridas
+    with col1:
+        st.metric(label="Empresas Adheridas", value=total_empresas)
+
+    # En la segunda columna, mostrar la suma de Inscriptos_para_Aceptar con tooltip
+    with col2:
+        st.metric(label="Total Inscriptos para Aceptar", value=total_inscriptos_para_aceptar, help="Este número representa la cantidad de posibles beneficiarios de Máxima, basado en los inscriptos que pueden ser aceptados según el cupo disponible en las empresas adheridas.")
+
+    # Mostrar el DataFrame y el subtítulo
     st.dataframe(df_display, hide_index=True)
+    st.subheader("Empresas")
 
     if not df_empresas.empty:
         st.subheader("Distribución de Empleados por Empresa y Puesto")
