@@ -3,9 +3,12 @@ import pandas as pd
 import altair as alt
 from datetime import datetime
 import io
+import pydeck as pdk
+import plotly.express as px
 
 
-def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas, file_date_inscripciones, file_date_inscriptos, file_date_empresas):
+
+def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_inscripciones, file_date_inscriptos, file_date_poblacion, geojson_data):
     # Convertir las fechas en inscripciones
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
         df_inscripciones['FEC_INSCRIPCION'] = pd.to_datetime(df_inscripciones['FEC_INSCRIPCION'], errors='coerce')
@@ -31,16 +34,13 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     df_cti_alta = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 14]
 
     # Filtrar solo los registros con ID_EST_FICHA = 8
-    df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]  
-    
+    df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]
+   
 
     # Pestaña inscripciones
     st.markdown("### Programas Empleo +26")
-
-
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
-   
     # Filtros de fechas para inscripciones
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
         st.sidebar.header("Filtros de Fechas")
@@ -150,7 +150,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     with col2:
         st.markdown(
             f"""
-            <div style="background-color:rgb(211, 211, 211);padding:10px;border-radius:5px;">
+            <div style="background-color:rgb(240, 240, 240);padding:10px;border-radius:5px;">
                 <strong>Personas Unicas Inscriptos REEL</strong><br>
                 <span style="font-size:24px;">{unique_cuil_count}</span>
             </div>
@@ -324,3 +324,36 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_empresas_seleccionadas
     with col1:
         st.subheader("Tabla de Adhesiones")
         st.dataframe(departamento_counts_sorted, hide_index=True)
+
+    # Corregir el nombre del departamento en df_poblacion
+    df_poblacion['NOMDEPTO'] = df_poblacion['NOMDEPTO'].replace('PRESIDENTE ROQUE SAENZ PENA', 'PRESIDENTE ROQUE SAENZ PENA')
+
+    # Corregir el nombre del departamento en df_inscriptos
+    df_inscriptos['N_DEPARTAMENTO'] = df_inscriptos['N_DEPARTAMENTO'].replace('PRESIDENTE ROQUE SAENZ PEÑA', 'PRESIDENTE ROQUE SAENZ PENA')
+    # Calcular el número de inscriptos por departamento usando 'ID_FICHA'
+    inscriptos_por_depto = df_inscriptos.groupby('N_DEPARTAMENTO')['CUIL'].count().to_dict()
+    # Asegúrate de que las columnas coincidan
+    if 'NOMDEPTO' in df_poblacion.columns:
+        df_poblacion['INSCRIPTOS'] = df_poblacion['NOMDEPTO'].map(inscriptos_por_depto).fillna(0).astype(int)
+
+    # Crear el mapa
+    st.subheader("Distribucion de inscriptos por Departamento")
+    ig = px.choropleth_mapbox(
+    df_poblacion,
+    geojson=geojson_data,
+    locations='NOMDEPTO',
+    featureidkey='properties.NOMDEPTO',
+    color='INSCRIPTOS',
+    mapbox_style="carto-positron",
+    zoom=4,
+    center={"lat": -31.416, "lon": -64.183},
+    opacity=0.5,
+    labels={'INSCRIPTOS': 'Número de Inscriptos'},
+)
+
+    # Actualizar la geometría
+    ig.update_geos(fitbounds="locations", visible=False)
+
+    # Mostrar el gráfico
+    st.plotly_chart(ig, use_container_width=True)
+
