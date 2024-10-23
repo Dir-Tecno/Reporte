@@ -231,54 +231,72 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
 
     # Verifica que las columnas de fecha estén presentes en los DataFrames
     if 'FEC_INSCRIPCION' in df_inscripciones.columns and 'FEC_SIST' in df_inscriptos.columns:
+        # Filtrar fechas válidas en df_inscriptos
+        df_inscriptos = df_inscriptos[df_inscriptos['FEC_SIST'].notna()]
+
+        # Definir la fecha mínima como un Timestamp
+        fecha_minima = pd.to_datetime("2024-08-19")
+
         # Agrupar por fecha y contar inscripciones para el primer conjunto (Inscripciones)
         inscripciones_por_fecha = df_inscripciones.groupby(df_inscripciones['FEC_INSCRIPCION'].dt.date).size().reset_index(name='Conteo')
         inscripciones_por_fecha.columns = ['Fecha', 'Conteo']
         inscripciones_por_fecha['Tipo'] = 'Adhesiones'
-    
+        
         # Agrupar por fecha y contar inscripciones para el segundo conjunto (Match)
         match_por_fecha = df_inscriptos.groupby(df_inscriptos['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
         match_por_fecha.columns = ['Fecha', 'Conteo']
         match_por_fecha['Tipo'] = 'Match'
 
-        # Agrupar por fecha y contar inscripciones para el segundo conjunto (Match)
+        # Agrupar por fecha y contar inscripciones para el tercer conjunto (CTI)
         cti_por_fecha = df_cti.groupby(df_cti['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
         cti_por_fecha.columns = ['Fecha', 'Conteo']
         cti_por_fecha['Tipo'] = 'cti'
-    
+        
         # Combinar ambos DataFrames en uno solo
         datos_combinados = pd.concat([inscripciones_por_fecha, match_por_fecha, cti_por_fecha])
-    
+        
+        # Asegúrate de que la columna 'Fecha' esté en formato datetime
+        if 'Fecha' in datos_combinados.columns:
+            datos_combinados['Fecha'] = pd.to_datetime(datos_combinados['Fecha'], errors='coerce')  # Convertir a datetime
+            datos_combinados = datos_combinados.dropna(subset=['Fecha'])  # Eliminar filas con fechas nulas
+
+       # Convertir 'Fecha' a datetime.date
+        datos_combinados['Fecha'] = datos_combinados['Fecha'].apply(lambda x: x.date() if isinstance(x, pd.Timestamp) else x)
+
+        # Filtrar datos combinados por fecha mínima
+        fecha_minima = pd.Timestamp("2024-08-19")  # Asegurar que sea un Timestamp para la comparación
+        datos_combinados = datos_combinados[datos_combinados['Fecha'] >= fecha_minima.date()]  # Convertir fecha_minima a date
+
+
         # Crear gráfico combinado
         st.subheader("Postulaciones y Match por Fecha")
         fecha_chart_combined = alt.Chart(datos_combinados).mark_line().encode(
             x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
             y=alt.Y('Conteo:Q', title='Cantidad'),
-            color='Tipo:N',  # Diferenciar por tipo (Inscripciones o Match)
+            color='Tipo:N',  # Diferenciar por tipo (Inscripciones, Match, cti)
             tooltip=['Fecha:T', 'Conteo:Q', 'Tipo:N']
         ).properties(width=800, height=400)
 
         st.altair_chart(fecha_chart_combined, use_container_width=True)
 
+    # Calcular la suma acumulada de Conteo para cada tipo
+    datos_combinados['Conteo Acumulado'] = datos_combinados.groupby('Tipo')['Conteo'].cumsum()
 
-        # Calcular la suma acumulada de Conteo para cada tipo
-        datos_combinados['Conteo Acumulado'] = datos_combinados.groupby('Tipo')['Conteo'].cumsum()
-
-        # Crear gráfico acumulado
-        st.subheader("Conteo Acumulado por Fecha")
-        fecha_chart_acumulado = alt.Chart(datos_combinados).mark_line().encode(
-            x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
-            y=alt.Y('Conteo Acumulado:Q', title='Cantidad Acumulada'),
-            color='Tipo:N',  # Diferenciar por tipo (Inscripciones, Match, cti)
-            tooltip=['Fecha:T', 'Conteo Acumulado:Q', 'Tipo:N']
-        ).properties(width=800, height=400)
+    # Crear gráfico acumulado
+    st.subheader("Conteo Acumulado por Fecha")
+    fecha_chart_acumulado = alt.Chart(datos_combinados).mark_line().encode(
+        x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
+        y=alt.Y('Conteo Acumulado:Q', title='Cantidad Acumulada'),
+        color='Tipo:N',  # Diferenciar por tipo (Inscripciones, Match, cti)
+        tooltip=['Fecha:T', 'Conteo Acumulado:Q', 'Tipo:N']
+    ).properties(width=800, height=400)
     
-        # Mostrar el gráfico en Streamlit
-        st.altair_chart(fecha_chart_acumulado, use_container_width=True)
+    # Mostrar el gráfico en Streamlit
+    st.altair_chart(fecha_chart_acumulado, use_container_width=True)
 
-    
+
         # DNI por Localidad (Barras)
-        if 'N_LOCALIDAD' in df_inscripciones.columns and 'N_DEPARTAMENTO' in df_inscripciones.columns:
+    if 'N_LOCALIDAD' in df_inscripciones.columns and 'N_DEPARTAMENTO' in df_inscripciones.columns:
             dni_por_localidad = df_inscripciones.groupby(['N_LOCALIDAD', 'N_DEPARTAMENTO']).size().reset_index(name='Conteo')
             dni_por_localidad['N_DEPARTAMENTO'] = dni_por_localidad['N_DEPARTAMENTO'].apply(lambda x: 'INTERIOR' if x != 'CAPITAL' else 'CAPITAL')
     
@@ -329,12 +347,15 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     df_poblacion['NOMDEPTO'] = df_poblacion['NOMDEPTO'].replace('PRESIDENTE ROQUE SAENZ PENA', 'PRESIDENTE ROQUE SAENZ PENA')
 
     # Corregir el nombre del departamento en df_inscriptos
-    df_inscriptos['N_DEPARTAMENTO'] = df_inscriptos['N_DEPARTAMENTO'].replace('PRESIDENTE ROQUE SAENZ PEÑA', 'PRESIDENTE ROQUE SAENZ PENA')
+    df_inscriptos['N_DEPARTAMENTO'] = df_inscriptos['N_DEPARTAMENTO'].str.replace("PTE ROQUE SAENZ PEÑA", "PRESIDENTE ROQUE SAENZ PENA", regex=False)
+    
     # Calcular el número de inscriptos por departamento usando 'ID_FICHA'
-    inscriptos_por_depto = df_inscriptos.groupby('N_DEPARTAMENTO')['CUIL'].count().to_dict()
+    inscriptos_por_depto = df_inscriptos.groupby('N_DEPARTAMENTO')['CUIL'].count().reset_index(name='Cuenta')
+
     # Asegúrate de que las columnas coincidan
     if 'NOMDEPTO' in df_poblacion.columns:
-        df_poblacion['INSCRIPTOS'] = df_poblacion['NOMDEPTO'].map(inscriptos_por_depto).fillna(0).astype(int)
+        df_poblacion['INSCRIPTOS'] = df_poblacion['NOMDEPTO'].map(inscriptos_por_depto.set_index('N_DEPARTAMENTO')['Cuenta']).fillna(0).astype(int)
+
 
     # Crear el mapa
     st.subheader("Distribucion de inscriptos por Departamento")
@@ -357,3 +378,16 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     # Mostrar el gráfico
     st.plotly_chart(ig, use_container_width=True)
 
+    # Agregar botón de descarga para el DataFrame agrupado
+    buffer = io.BytesIO()
+    # Convertir inscriptos_por_depto a CSV con codificación utf-8-sig
+    inscriptos_por_depto.to_csv(buffer, index=False, encoding='utf-8-sig')
+    buffer.seek(0)
+
+    st.download_button(
+        label="Descargar Inscriptos por Departamento como CSV",
+        data=buffer,
+        file_name='inscriptos_por_depto.csv',
+        mime='text/csv'
+    )
+    
