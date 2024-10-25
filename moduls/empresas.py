@@ -20,13 +20,18 @@ def calculate_cupo(cantidad_empleados, empleador):
     else:
         return int(0.1 * cantidad_empleados)
 
-
 def show_companies(df_empresas, df_inscriptos, file_date):
+    # Asegúrate de que 'CANTIDAD_EMPLEADOS' sea numérico
+    df_empresas['CANTIDAD_EMPLEADOS'] = pd.to_numeric(df_empresas['CANTIDAD_EMPLEADOS'], errors='coerce')
+
+    # Reemplazar valores nulos con 0 o un valor adecuado
+    df_empresas['CANTIDAD_EMPLEADOS'] = df_empresas['CANTIDAD_EMPLEADOS'].fillna(0)
+
     total_empresas = df_empresas['CUIT'].nunique()
+    
     # Agrupar y contar la cantidad de inscriptos por empresa
     inscriptos_por_empresa = df_inscriptos.groupby('EMP_CUIT')['ID_FICHA'].count().reset_index(name='Inscriptos')
     inscriptos_por_empresa = inscriptos_por_empresa.sort_values(by='Inscriptos', ascending=False)
-
 
     # Calcular la columna 'CUPO' usando ambos argumentos
     df_empresas['CUPO'] = df_empresas.apply(lambda row: calculate_cupo(row['CANTIDAD_EMPLEADOS'], row['EMPLEADOR']), axis=1)
@@ -39,9 +44,7 @@ def show_companies(df_empresas, df_inscriptos, file_date):
     inscriptos_por_empresa['EMP_CUIT'] = inscriptos_por_empresa['EMP_CUIT'].astype(str)
     
     # Mostrar la tabla con columnas de igual ancho
-    
     df_display = df_empresas.merge(inscriptos_por_empresa, how='left', left_on='CUIT', right_on='EMP_CUIT')
-
 
     # Añadir nueva columna 'Inscriptos_Aceptados'
     df_display['Inscriptos_para_Aceptar'] = df_display.apply(lambda row: min(row['Inscriptos'], row['CUPO']), axis=1)
@@ -104,3 +107,5 @@ def show_companies(df_empresas, df_inscriptos, file_date):
         st.pyplot(plt)
         plt.clf()  # Limpiar la figura para evitar acumulación
         
+
+
