@@ -46,6 +46,9 @@ def show_companies(df_empresas, df_inscriptos, file_date):
     # Mostrar la tabla con columnas de igual ancho
     df_display = df_empresas.merge(inscriptos_por_empresa, how='left', left_on='CUIT', right_on='EMP_CUIT')
 
+    # Filtrar para mostrar solo empresas con al menos 1 inscripto
+    df_display = df_display[df_display['Inscriptos'].notna()]
+
     # Añadir nueva columna 'Inscriptos_Aceptados'
     df_display['Inscriptos_para_Aceptar'] = df_display.apply(lambda row: min(row['Inscriptos'], row['CUPO']), axis=1)
 
@@ -54,6 +57,10 @@ def show_companies(df_empresas, df_inscriptos, file_date):
     
     # Calcular la suma de Inscriptos_para_Aceptar
     total_inscriptos_para_aceptar = int(df_display['Inscriptos_para_Aceptar'].sum())
+
+    #filtrar  empresa por inscriptos
+    total_empresas = df_display['CUIT'].nunique()  # Cambiado para contar solo empresas con inscriptos
+
 
     # Crear dos columnas
     col1, col2 = st.columns(2)
@@ -107,5 +114,6 @@ def show_companies(df_empresas, df_inscriptos, file_date):
         st.pyplot(plt)
         plt.clf()  # Limpiar la figura para evitar acumulación
         
+
 
 
