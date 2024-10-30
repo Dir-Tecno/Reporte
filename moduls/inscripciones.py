@@ -33,8 +33,12 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     # Filtrar solo los BENEFICIARIOS CTI
     df_cti_alta = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 14]
 
+    # Filtrar solo los registros con ID_EST_FICHA = 3
+    df_beneficiarios = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 3]
+
     # Filtrar solo los registros con ID_EST_FICHA = 8
-    df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 8]
+    df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin([8,3])]
+
    
 
     # Pestaña inscripciones
@@ -95,6 +99,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     total_cti = df_cti['CUIL'].nunique()
     total_cti_benef = df_cti_benef['CUIL'].nunique()
     total_cti_alta = df_cti_alta['CUIL'].nunique()
+    total_benef = df_beneficiarios['CUIL'].nunique()
 
     st.markdown("### CTI")
     col1, col2, col3 = st.columns(3)
@@ -129,65 +134,20 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
             """, 
             unsafe_allow_html=True
         )
+
     
-
-    # Añadir una sección de métricas con título "Matcheos"
-    st.markdown("### Matcheos")
-
-        # Crear las columnas para las métricas
-    col1,col2, col3, col4,col5 = st.columns(5)
-
+    st.markdown("### Reel")
+    col1, col2, col3,col4, col5 = st.columns(5)
     with col1:
-        st.markdown(
+            st.markdown(
             f"""
-            <div style="background-color:white;padding:10px;border-radius:5px;">
-                <strong>Fichas/Inscriptos</strong><br>
-                <span style="font-size:24px;">{df_inscriptos.shape[0]}</span>
+            <div style="background-color:#00800099;padding:10px;border-radius:5px;">
+                <strong>Beneficiarios</strong><br>
+                <span style="font-size:24px;">{total_benef}</span>
             </div>
             """, 
             unsafe_allow_html=True
         )
-    with col2:
-        st.markdown(
-            f"""
-            <div style="background-color:rgb(240, 240, 240);padding:10px;border-radius:5px;">
-                <strong>Personas Unicas Inscriptos REEL</strong><br>
-                <span style="font-size:24px;">{unique_cuil_count}</span>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-    with col3:
-        st.markdown(
-            f"""
-            <div style="background-color:white;padding:10px;border-radius:5px;">
-                <strong>Inscriptos entre 26 y 44 años</strong><br>
-                <span style="font-size:24px;">{count_26_44}</span>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-    with col4:
-        st.markdown(
-            f"""
-            <div style="background-color:white;padding:10px;border-radius:5px;">
-                <strong>Inscriptos 45 años o más</strong><br>
-                <span style="font-size:24px;">{count_45_inscriptos}</span>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-    with col5:
-        st.markdown(
-            f"""
-            <div style="background-color:white;padding:10px;border-radius:5px;">
-                <strong>Inscriptos Zonas Favorecidas</strong><br>
-                <span style="font-size:24px;">{total_dept_specific}</span>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        ) 
-
 
     # Crear dos columnas para los botones de descarga
     st.markdown("### Descarga de bases")
@@ -206,7 +166,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
             buffer1.seek(0)
 
         st.download_button(
-            label="Descargar Inscriptos REEL como Excel",
+            label="Descargar Inscriptos REEL como Excel (con beneficiarios)",
             data=buffer1,
             file_name='df_inscriptos.xlsx',
             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
