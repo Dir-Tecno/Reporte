@@ -95,7 +95,6 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
 
     # Cálculo total
     #total_inscripciones = df_inscripciones.shape[0]
-    total_inscriptos = df_inscriptos.shape[0]
     total_cti = df_cti['CUIL'].nunique()
     total_cti_benef = df_cti_benef['CUIL'].nunique()
     total_cti_alta = df_cti_alta['CUIL'].nunique()
@@ -137,11 +136,11 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
 
     
     st.markdown("### Reel")
-    col1, col2, col3,col4, col5 = st.columns(5)
+    col1, col2, col3 = st.columns(3)
     with col1:
-            st.markdown(
+        st.markdown(
             f"""
-            <div style="background-color:#00800099;padding:10px;border-radius:5px;">
+            <div style="background-color:rgb(255, 230, 153);padding:10px;border-radius:5px;">
                 <strong>Beneficiarios</strong><br>
                 <span style="font-size:24px;">{total_benef}</span>
             </div>
