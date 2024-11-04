@@ -70,8 +70,8 @@ def show_companies(df_empresas, df_inscriptos, file_date):
         st.metric(label="Empresas Adheridas", value=total_empresas)
 
     # En la segunda columna, mostrar la suma de Inscriptos_para_Aceptar con tooltip
-    with col2:
-        st.metric(label="Total Inscriptos para Aceptar", value=total_inscriptos_para_aceptar, help="Este número representa la cantidad de posibles beneficiarios de Máxima, basado en los inscriptos que pueden ser aceptados según el cupo disponible en las empresas adheridas.")
+    #with col2:
+    #    st.metric(label="Total Inscriptos para Aceptar", value=total_inscriptos_para_aceptar, help="Este número representa la cantidad de posibles beneficiarios de Máxima, basado en los inscriptos que pueden ser aceptados según el cupo disponible en las empresas adheridas.")
 
     # Mostrar el DataFrame y el subtítulo
     st.dataframe(df_display, hide_index=True)

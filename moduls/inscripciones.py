@@ -36,6 +36,12 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     # Filtrar solo los registros con ID_EST_FICHA = 3
     df_beneficiarios = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 3]
 
+    # Filtrar solo los registros con que quedan para la repesca
+    df_postulantes_aptos = df_inscriptos[(df_inscriptos['ID_EST_FIC'] == 8) & (df_inscriptos['ID_EMP'].isnull())]
+
+    # Filtrar solo los registros con que quedan para la repesca
+    df_postulantes_repesca = df_inscriptos[(df_inscriptos['ID_EST_FIC'] == 8) & (df_inscriptos['ID_EMP'].notnull())]
+
     # Filtrar solo los registros con ID_EST_FICHA = 8
     df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin([8,3])]
 
@@ -99,6 +105,8 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     total_cti_benef = df_cti_benef['CUIL'].nunique()
     total_cti_alta = df_cti_alta['CUIL'].nunique()
     total_benef = df_beneficiarios['CUIL'].nunique()
+    total_postulantes_aptos = df_postulantes_aptos['CUIL'].nunique()
+    total_postulantes_repesca = df_postulantes_repesca['CUIL'].nunique()
 
     st.markdown("### CTI")
     col1, col2, col3 = st.columns(3)
@@ -140,9 +148,34 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     with col1:
         st.markdown(
             f"""
-            <div style="background-color:rgb(255, 230, 153);padding:10px;border-radius:5px;">
+            <div style="background-color:rgb(148 217 118);padding:10px;border-radius:5px;">
                 <strong>Beneficiarios</strong><br>
                 <span style="font-size:24px;">{total_benef}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col3:
+        st.markdown(
+            f"""
+            <div style="background-color:rgb(153 195 255);padding:10px;border-radius:5px;">
+                <strong>Postulantes Aptos</strong><br>
+                <span style="font-size:24px;">{total_postulantes_aptos}</span><br>
+                <span style="font-size:12px;line-height:1;">Número de postulantes "Fuera de Cupo de Empresa", </span><br>
+                <span style="font-size:12px;line-height:1;">aún no tomados por otra empresa.</span>
+
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col2:
+        st.markdown(
+            f"""
+            <div style="background-color:rgb(104 185 75);padding:10px;border-radius:5px;">
+                <strong>Beneficiarios "Repesca"</strong><br>
+                <span style="font-size:24px;">{total_postulantes_repesca}</span><br>
+                <span style="font-size:12px;line-height:1;">Número de postulantes que quedaron "Fuera de Cupo de Empresa",</span><br>
+                <span style="font-size:12px;line-height:1;">que fueron tomados por otras empresas.</span>
             </div>
             """, 
             unsafe_allow_html=True
@@ -188,93 +221,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
         )
 
 
-    # Verifica que las columnas de fecha estén presentes en los DataFrames
-    if 'FEC_INSCRIPCION' in df_inscripciones.columns and 'FEC_SIST' in df_inscriptos.columns:
-        # Filtrar fechas válidas en df_inscriptos
-        df_inscriptos = df_inscriptos[df_inscriptos['FEC_SIST'].notna()]
-
-        # Definir la fecha mínima como un Timestamp
-        fecha_minima = pd.to_datetime("2024-08-19")
-
-        # Agrupar por fecha y contar inscripciones para el primer conjunto (Inscripciones)
-        inscripciones_por_fecha = df_inscripciones.groupby(df_inscripciones['FEC_INSCRIPCION'].dt.date).size().reset_index(name='Conteo')
-        inscripciones_por_fecha.columns = ['Fecha', 'Conteo']
-        inscripciones_por_fecha['Tipo'] = 'Adhesiones'
-        
-        # Agrupar por fecha y contar inscripciones para el segundo conjunto (Match)
-        match_por_fecha = df_inscriptos.groupby(df_inscriptos['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
-        match_por_fecha.columns = ['Fecha', 'Conteo']
-        match_por_fecha['Tipo'] = 'Match'
-
-        # Agrupar por fecha y contar inscripciones para el tercer conjunto (CTI)
-        cti_por_fecha = df_cti.groupby(df_cti['FEC_SIST'].dt.date).size().reset_index(name='Conteo')
-        cti_por_fecha.columns = ['Fecha', 'Conteo']
-        cti_por_fecha['Tipo'] = 'cti'
-        
-        # Combinar ambos DataFrames en uno solo
-        datos_combinados = pd.concat([inscripciones_por_fecha, match_por_fecha, cti_por_fecha])
-        
-        # Asegúrate de que la columna 'Fecha' esté en formato datetime
-        if 'Fecha' in datos_combinados.columns:
-            datos_combinados['Fecha'] = pd.to_datetime(datos_combinados['Fecha'], errors='coerce')  # Convertir a datetime
-            datos_combinados = datos_combinados.dropna(subset=['Fecha'])  # Eliminar filas con fechas nulas
-
-       # Convertir 'Fecha' a datetime.date
-        datos_combinados['Fecha'] = datos_combinados['Fecha'].apply(lambda x: x.date() if isinstance(x, pd.Timestamp) else x)
-
-        # Filtrar datos combinados por fecha mínima
-        fecha_minima = pd.Timestamp("2024-08-19")  # Asegurar que sea un Timestamp para la comparación
-        datos_combinados = datos_combinados[datos_combinados['Fecha'] >= fecha_minima.date()]  # Convertir fecha_minima a date
-
-
-        # Crear gráfico combinado
-        st.subheader("Postulaciones y Match por Fecha")
-        fecha_chart_combined = alt.Chart(datos_combinados).mark_line().encode(
-            x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
-            y=alt.Y('Conteo:Q', title='Cantidad'),
-            color='Tipo:N',  # Diferenciar por tipo (Inscripciones, Match, cti)
-            tooltip=['Fecha:T', 'Conteo:Q', 'Tipo:N']
-        ).properties(width=800, height=400)
-
-        st.altair_chart(fecha_chart_combined, use_container_width=True)
-
-    # Calcular la suma acumulada de Conteo para cada tipo
-    datos_combinados['Conteo Acumulado'] = datos_combinados.groupby('Tipo')['Conteo'].cumsum()
-
-    # Crear gráfico acumulado
-    st.subheader("Conteo Acumulado por Fecha")
-    fecha_chart_acumulado = alt.Chart(datos_combinados).mark_line().encode(
-        x=alt.X('Fecha:T', title='Fecha', axis=alt.Axis(format='%d/%m/%Y', tickCount='day', labelAngle=-45)),
-        y=alt.Y('Conteo Acumulado:Q', title='Cantidad Acumulada'),
-        color='Tipo:N',  # Diferenciar por tipo (Inscripciones, Match, cti)
-        tooltip=['Fecha:T', 'Conteo Acumulado:Q', 'Tipo:N']
-    ).properties(width=800, height=400)
-    
-    # Mostrar el gráfico en Streamlit
-    st.altair_chart(fecha_chart_acumulado, use_container_width=True)
-
-
-        # DNI por Localidad (Barras)
-    if 'N_LOCALIDAD' in df_inscripciones.columns and 'N_DEPARTAMENTO' in df_inscripciones.columns:
-            dni_por_localidad = df_inscripciones.groupby(['N_LOCALIDAD', 'N_DEPARTAMENTO']).size().reset_index(name='Conteo')
-            dni_por_localidad['N_DEPARTAMENTO'] = dni_por_localidad['N_DEPARTAMENTO'].apply(lambda x: 'INTERIOR' if x != 'CAPITAL' else 'CAPITAL')
-    
-            dni_por_localidad_filter = st.multiselect("Filtrar por Región", dni_por_localidad['N_DEPARTAMENTO'].unique(), default=dni_por_localidad['N_DEPARTAMENTO'].unique())
-            dni_por_localidad = dni_por_localidad[dni_por_localidad['N_DEPARTAMENTO'].isin(dni_por_localidad_filter)]
-    
-            top_10_localidades = dni_por_localidad.sort_values(by='Conteo', ascending=False).head(10)
-            st.subheader("Top 10 de Adhesiones por Localidad")
-    
-            bar_chart_localidad = alt.Chart(top_10_localidades).mark_bar().encode(
-                y=alt.Y('N_LOCALIDAD:N', title='Localidad', sort='-x'),
-                x=alt.X('Conteo:Q', title='Conteo'),
-                color=alt.Color('N_LOCALIDAD:N', legend=None)
-            ).properties(width=600, height=400)
-    
-            text = bar_chart_localidad.mark_text(align='left', baseline='middle', dx=3).encode(text='Conteo:Q')
-            final_chart = bar_chart_localidad + text
-            st.altair_chart(final_chart, use_container_width=True)
-
+"""
     st.markdown("### por Departamentos")
     if 'N_DEPARTAMENTO' in df_inscripciones.columns:
         departamentos = df_inscripciones['N_DEPARTAMENTO'].unique()
@@ -350,3 +297,4 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
         mime='text/csv'
     )
     
+"""
