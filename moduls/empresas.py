@@ -26,8 +26,6 @@ def show_companies(df_empresas, df_inscriptos, file_date):
 
     # Reemplazar valores nulos con 0 o un valor adecuado
     df_empresas['CANTIDAD_EMPLEADOS'] = df_empresas['CANTIDAD_EMPLEADOS'].fillna(0)
-
-    total_empresas = df_empresas['CUIT'].nunique()
     
     # Agrupar y contar la cantidad de inscriptos por empresa
     inscriptos_por_empresa = df_inscriptos.groupby('EMP_CUIT')['ID_FICHA'].count().reset_index(name='Inscriptos')
@@ -56,10 +54,10 @@ def show_companies(df_empresas, df_inscriptos, file_date):
     df_display = df_display.sort_values(by='Inscriptos_para_Aceptar', ascending=False)
     
     # Calcular la suma de Inscriptos_para_Aceptar
-    total_inscriptos_para_aceptar = int(df_display['Inscriptos_para_Aceptar'].sum())
+    #total_inscriptos_para_aceptar = int(df_display['Inscriptos_para_Aceptar'].sum())
 
     #filtrar  empresa por inscriptos
-    total_empresas = df_display['CUIT'].nunique()  # Cambiado para contar solo empresas con inscriptos
+    empresas_26 = df_inscriptos['EMP_CUIT'].nunique()  # Cambiado para contar solo empresas con inscriptos
 
 
     # Crear dos columnas
@@ -67,11 +65,11 @@ def show_companies(df_empresas, df_inscriptos, file_date):
 
     # En la primera columna, mostrar la métrica de Empresas Adheridas
     with col1:
-        st.metric(label="Empresas Adheridas", value=total_empresas)
+        st.metric(label="Empresas Adheridas", value=empresas_26)
 
     # En la segunda columna, mostrar la suma de Inscriptos_para_Aceptar con tooltip
     #with col2:
-    #    st.metric(label="Total Inscriptos para Aceptar", value=total_inscriptos_para_aceptar, help="Este número representa la cantidad de posibles beneficiarios de Máxima, basado en los inscriptos que pueden ser aceptados según el cupo disponible en las empresas adheridas.")
+        #st.metric(label="Total Inscriptos para Aceptar", value=total_inscriptos_para_aceptar, help="Este número representa la cantidad de posibles beneficiarios de Máxima, basado en los inscriptos que pueden ser aceptados según el cupo disponible en las empresas adheridas.")
 
     # Mostrar el DataFrame y el subtítulo
     st.dataframe(df_display, hide_index=True)
