@@ -36,7 +36,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     # Filtrar solo los registros con ID_EST_FICHA = 3
     df_beneficiarios = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 3]
 
-    # Filtrar solo los registros con que quedan para la repesca
+    # Filtrar solo los registros con que quedan aptos
     df_postulantes_aptos = df_inscriptos[(df_inscriptos['ID_EST_FIC'] == 8) & (df_inscriptos['ID_EMP'].isnull())]
 
     # Filtrar solo los registros con que quedan para la repesca
@@ -51,18 +51,37 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     st.markdown("### Programas Empleo +26")
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
+    # Buzón de mensajes y valoración del reporte
+    st.sidebar.header("📝 Buzón de Mensajes")
+
+    # Área de texto para comentarios
+    comentario = st.sidebar.text_area("Deja tu comentario sobre el reporte:", "", height=100)
+
+    # Selector de valoración
+    valoracion = st.sidebar.selectbox("Valora el reporte:", [1, 2, 3, 4, 5])
+
+    # Botón para enviar el mensaje
+    if st.sidebar.button("Enviar"):
+        if comentario:
+            st.sidebar.success("✅ Gracias por tu comentario!")
+            st.sidebar.write(f"**Comentario:** {comentario}")
+            st.sidebar.write(f"**Valoración:** {valoracion} estrellas")
+        else:
+            st.sidebar.warning("⚠️ Por favor, escribe un comentario antes de enviar.")
+
     # Filtros de fechas para inscripciones
-    if 'FEC_INSCRIPCION' in df_inscripciones.columns:
-        st.sidebar.header("Filtros de Fechas")
-        fecha_min, fecha_max = df_inscripciones['FEC_INSCRIPCION'].min().date(), df_inscripciones['FEC_INSCRIPCION'].max().date()
-        fecha_inicio = st.sidebar.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
-        fecha_fin = st.sidebar.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
-        df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & 
-                                            (df_inscripciones['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
+    #if 'FEC_INSCRIPCION' in df_inscripciones.columns:
+        #st.sidebar.header("Filtros de Fechas")
+        #fecha_min, fecha_max = df_inscripciones['FEC_INSCRIPCION'].min().date(), df_inscripciones['FEC_INSCRIPCION'].max().date()
+        #fecha_inicio = st.sidebar.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
+        #fecha_fin = st.sidebar.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
+        #df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & 
+        #                                    (df_inscripciones['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
     
-    if df_inscripciones.empty:
-        st.write("No hay inscripciones para mostrar en el rango de fechas seleccionado.")
-        return
+    #if df_inscripciones.empty:
+        #st.write("No hay inscripciones para mostrar en el rango de fechas seleccionado.")
+        #return
+    
     
 
     # Calcular edades en inscripciones
@@ -72,9 +91,9 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     df_inscriptos['Edad'] = (fecha_actual - df_inscriptos['FER_NAC']).dt.days // 365
 
     # Calcular personas de 45 o más años en inscriptos
-    count_45_inscriptos = df_inscriptos[df_inscriptos['Edad'] >= 45].shape[0]
+    #count_45_inscriptos = df_inscriptos[df_inscriptos['Edad'] >= 45].shape[0]
     # Calcular personas de entre 26 y 44 en inscriptos
-    count_26_44 = df_inscriptos[(df_inscriptos['Edad'] > 26) & (df_inscriptos['Edad'] < 45)]['CUIL'].nunique()
+    #count_26_44 = df_inscriptos[(df_inscriptos['Edad'] > 26) & (df_inscriptos['Edad'] < 45)]['CUIL'].nunique()
 
     # Calcular el número de CUIL únicos
     unique_cuil_count = df_inscriptos['CUIL'].nunique()
@@ -298,3 +317,4 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     )
     
 """
+
