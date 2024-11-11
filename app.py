@@ -22,7 +22,8 @@ blob_names = [
     "vt_reportes_ppp_mas26.txt",       #df 2 
     "vt_inscripciones_empleo_e26empr.txt", #df 3
     "vt_respuestas.txt",                 #df 4 
-    "departamentos_poblacion.csv"        #df 5 
+    "departamentos_poblacion.csv",        #df 5 
+    "VT_INSCRIPCIONES_EMPLEO_EMPRESAS.txt" #df 6
 ]
 
 # Cargar datos desde el bucket
@@ -55,7 +56,7 @@ tab1, tab2, tab3 = st.tabs(["Inscripciones", "Empresas", "Respuestas"])
 
 with tab1:
     # Mostrar inscripciones
-    show_inscriptions(dfs[0], dfs[2], dfs[5], file_dates[0], file_dates[2], file_dates[5], geojson_data)
+    show_inscriptions(dfs[6], dfs[0], dfs[2], dfs[5], file_dates[0], file_dates[2], file_dates[5], geojson_data)
 
 with tab2:
     # Mostrar empresas

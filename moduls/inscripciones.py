@@ -8,7 +8,121 @@ import plotly.express as px
 
 
 
-def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_inscripciones, file_date_inscriptos, file_date_poblacion, geojson_data):
+def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_poblacion, file_date_inscripciones, file_date_inscriptos, file_date_poblacion, geojson_data):
+    
+    ####### REPORTE PPP #############
+    st.markdown("### Programa Primer Paso")
+    st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
+    
+    # Calcular total de postulantes únicos
+    total_postulantes_ppp = df_postulaciones_fup['CUIL'].nunique()
+    st.metric(label="Total Postulantes PPP", value=total_postulantes_ppp)
+
+    # Gráfico de torta con la edad
+    df_postulaciones_fup['FEC_NACIMIENTO'] = pd.to_datetime(df_postulaciones_fup['FEC_NACIMIENTO'], errors='coerce')
+    
+    # Asegurarse de que no haya valores NaT antes de calcular la edad
+    df_postulaciones_fup = df_postulaciones_fup.dropna(subset=['FEC_NACIMIENTO'])
+    
+    # Verificar si hay valores NaT después de la conversión
+    if df_postulaciones_fup['FEC_NACIMIENTO'].isnull().any():
+        st.warning("Hay valores nulos en la columna FEC_NACIMIENTO después de la conversión.")
+        return  # Salir de la función si hay valores nulos
+
+    df_postulaciones_fup['Edad'] = (pd.Timestamp(datetime.now()) - df_postulaciones_fup['FEC_NACIMIENTO']).dt.days // 365
+    
+    # Filtrar mayores de 25 años
+    edad_counts = df_postulaciones_fup[df_postulaciones_fup['Edad'] <= 25]['Edad'].value_counts().reset_index()
+    edad_counts.columns = ['Edad', 'Count']  # Renombrar columnas para el gráfico
+    
+    st.write("Distribución de Edades (menores o iguales a 25 años)")
+    
+    # Agregar tooltips al gráfico de torta
+    fig = px.pie(edad_counts, values='Count', names='Edad', title='Distribución de Edades', 
+                 hover_data=['Count'], labels={'Edad': 'Edad'})
+    st.plotly_chart(fig)
+
+    ##### PPP POR DEPARTAMENTEO ##########
+
+    st.markdown("### por Departamentos")
+    if 'N_DEPARTAMENTO' in df_postulaciones_fup.columns:
+        departamentos = df_postulaciones_fup['N_DEPARTAMENTO'].unique()
+        selected_departamento = st.multiselect("Filtrar por Departamento", departamentos, default=departamentos)
+        df_filtered_departamentos = df_postulaciones_fup[df_postulaciones_fup['N_DEPARTAMENTO'].isin(selected_departamento)]
+    else:
+        df_filtered_departamentos = df_postulaciones_fup
+
+    # Calcular el conteo de CUIL únicos por departamento y localidad
+    departamento_counts = df_filtered_departamentos.groupby(['N_DEPARTAMENTO', 'N_LOCALIDAD'])['CUIL'].nunique().reset_index(name='Cuenta')
+    departamento_counts_sorted = departamento_counts.sort_values(by='Cuenta', ascending=False)
+
+    col1, col2 = st.columns([2, 3])
+    with col2:
+        st.subheader("Conteo por Departamento")
+        st.altair_chart(
+            alt.Chart(departamento_counts_sorted).mark_bar().encode(
+                y=alt.Y('N_DEPARTAMENTO:N', title='Departamento', sort='-x'),
+                x=alt.X('Cuenta:Q', title='Conteo de CUIL Únicos'),
+                color=alt.Color('N_DEPARTAMENTO:N', legend=None),
+                tooltip=['N_DEPARTAMENTO', 'Cuenta']
+            ).properties(width=900, height=500),
+            use_container_width=True
+        )
+    with col1:
+        st.subheader("Tabla de Postulaciones")
+        st.dataframe(departamento_counts_sorted, hide_index=True)
+
+    # Corregir el nombre del departamento en df_poblacion
+    df_poblacion['NOMDEPTO'] = df_poblacion['NOMDEPTO'].replace('PRESIDENTE ROQUE SAENZ PENA', 'PRESIDENTE ROQUE SAENZ PENA')
+
+    # Corregir el nombre del departamento en df_postulaciones_fup
+    df_postulaciones_fup['N_DEPARTAMENTO'] = df_postulaciones_fup['N_DEPARTAMENTO'].str.replace("PTE ROQUE SAENZ PEÑA", "PRESIDENTE ROQUE SAENZ PENA", regex=False)
+    
+    # Calcular el número de inscriptos únicos por departamento usando 'CUIL'
+    inscriptos_por_depto = df_postulaciones_fup.groupby('N_DEPARTAMENTO')['CUIL'].nunique().reset_index(name='Cuenta')
+
+    # Asegúrate de que las columnas coincidan
+    if 'NOMDEPTO' in df_poblacion.columns:
+        df_poblacion['INSCRIPTOS'] = df_poblacion['NOMDEPTO'].map(inscriptos_por_depto.set_index('N_DEPARTAMENTO')['Cuenta']).fillna(0).astype(int)
+
+    # Crear el mapa
+    st.subheader("Distribucion de postulaciones por Departamento")
+    ig = px.choropleth_mapbox(
+        df_poblacion,
+        geojson=geojson_data,
+        locations='NOMDEPTO',
+        featureidkey='properties.NOMDEPTO',
+        color='INSCRIPTOS',
+        mapbox_style="carto-positron",
+        zoom=4,
+        center={"lat": -31.416, "lon": -64.183},
+        opacity=0.5,
+        labels={'INSCRIPTOS': 'Número de Inscriptos'},
+    )
+
+    # Actualizar la geometría
+    ig.update_geos(fitbounds="locations", visible=False)
+
+    # Mostrar el gráfico
+    st.plotly_chart(ig, use_container_width=True)
+
+    # Agregar botón de descarga para el DataFrame agrupado
+    buffer = io.BytesIO()
+    # Convertir inscriptos_por_depto a CSV con codificación utf-8-sig
+    inscriptos_por_depto.to_csv(buffer, index=False, encoding='utf-8-sig')
+    buffer.seek(0)
+
+    st.download_button(
+        label="Descargar Inscriptos por Departamento como CSV",
+        data=buffer,
+        file_name='inscriptos_por_depto.csv',
+        mime='text/csv'
+    )
+
+    
+    
+    ########### EMPLEO +26 ##############
+    
     # Convertir las fechas en inscripciones
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
         df_inscripciones['FEC_INSCRIPCION'] = pd.to_datetime(df_inscripciones['FEC_INSCRIPCION'], errors='coerce')
@@ -51,6 +165,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
     st.markdown("### Programas Empleo +26")
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
+    """
     # Buzón de mensajes y valoración del reporte
     st.sidebar.header("📝 Buzón de Mensajes")
 
@@ -82,7 +197,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
         #st.write("No hay inscripciones para mostrar en el rango de fechas seleccionado.")
         #return
     
-    
+    """
 
     # Calcular edades en inscripciones
     fecha_actual = pd.Timestamp(datetime.now())
@@ -174,7 +289,7 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
             """, 
             unsafe_allow_html=True
         )
-    with col3:
+    with col2:
         st.markdown(
             f"""
             <div style="background-color:rgb(153 195 255);padding:10px;border-radius:5px;">
@@ -187,19 +302,20 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
             """, 
             unsafe_allow_html=True
         )
+        """
     with col2:
         st.markdown(
-            f"""
+            f""
             <div style="background-color:rgb(104 185 75);padding:10px;border-radius:5px;">
                 <strong>Beneficiarios "Repesca"</strong><br>
                 <span style="font-size:24px;">{total_postulantes_repesca}</span><br>
                 <span style="font-size:12px;line-height:1;">Número de postulantes que quedaron "Fuera de Cupo de Empresa",</span><br>
                 <span style="font-size:12px;line-height:1;">que fueron tomados por otras empresas.</span>
             </div>
-            """, 
+            "", 
             unsafe_allow_html=True
         )
-
+"""
     # Crear dos columnas para los botones de descarga
     st.markdown("### Descarga de bases")
     col1, col2 = st.columns(2)
@@ -240,81 +356,6 @@ def show_inscriptions(df_inscripciones, df_inscriptos, df_poblacion, file_date_i
         )
 
 
-"""
-    st.markdown("### por Departamentos")
-    if 'N_DEPARTAMENTO' in df_inscripciones.columns:
-        departamentos = df_inscripciones['N_DEPARTAMENTO'].unique()
-        selected_departamento = st.multiselect("Filtrar por Departamento", departamentos, default=departamentos)
-        df_filtered_departamentos = df_inscripciones[df_inscripciones['N_DEPARTAMENTO'].isin(selected_departamento)]
-    else:
-        df_filtered_departamentos = df_inscripciones
-
-    departamento_counts = df_filtered_departamentos.groupby(['N_DEPARTAMENTO', 'N_LOCALIDAD']).size().reset_index(name='Cuenta')
-    departamento_counts_sorted = departamento_counts.sort_values(by='Cuenta', ascending=False)
-
-    col1, col2 = st.columns([2, 3])
-    with col2:
-        st.subheader("Conteo por Departamento")
-        st.altair_chart(
-            alt.Chart(departamento_counts_sorted).mark_bar().encode(
-                y=alt.Y('N_DEPARTAMENTO:N', title='Departamento', sort='-x'),
-                x=alt.X('Cuenta:Q', title='Conteo'),
-                color=alt.Color('N_DEPARTAMENTO:N', legend=None),
-                tooltip=['N_DEPARTAMENTO', 'Cuenta']
-            ).properties(width=900, height=500),
-            use_container_width=True
-        )
-    with col1:
-        st.subheader("Tabla de Adhesiones")
-        st.dataframe(departamento_counts_sorted, hide_index=True)
-
-    # Corregir el nombre del departamento en df_poblacion
-    df_poblacion['NOMDEPTO'] = df_poblacion['NOMDEPTO'].replace('PRESIDENTE ROQUE SAENZ PENA', 'PRESIDENTE ROQUE SAENZ PENA')
-
-    # Corregir el nombre del departamento en df_inscriptos
-    df_inscriptos['N_DEPARTAMENTO'] = df_inscriptos['N_DEPARTAMENTO'].str.replace("PTE ROQUE SAENZ PEÑA", "PRESIDENTE ROQUE SAENZ PENA", regex=False)
     
-    # Calcular el número de inscriptos por departamento usando 'ID_FICHA'
-    inscriptos_por_depto = df_inscriptos.groupby('N_DEPARTAMENTO')['CUIL'].count().reset_index(name='Cuenta')
 
-    # Asegúrate de que las columnas coincidan
-    if 'NOMDEPTO' in df_poblacion.columns:
-        df_poblacion['INSCRIPTOS'] = df_poblacion['NOMDEPTO'].map(inscriptos_por_depto.set_index('N_DEPARTAMENTO')['Cuenta']).fillna(0).astype(int)
-
-
-    # Crear el mapa
-    st.subheader("Distribucion de inscriptos por Departamento")
-    ig = px.choropleth_mapbox(
-    df_poblacion,
-    geojson=geojson_data,
-    locations='NOMDEPTO',
-    featureidkey='properties.NOMDEPTO',
-    color='INSCRIPTOS',
-    mapbox_style="carto-positron",
-    zoom=4,
-    center={"lat": -31.416, "lon": -64.183},
-    opacity=0.5,
-    labels={'INSCRIPTOS': 'Número de Inscriptos'},
-)
-
-    # Actualizar la geometría
-    ig.update_geos(fitbounds="locations", visible=False)
-
-    # Mostrar el gráfico
-    st.plotly_chart(ig, use_container_width=True)
-
-    # Agregar botón de descarga para el DataFrame agrupado
-    buffer = io.BytesIO()
-    # Convertir inscriptos_por_depto a CSV con codificación utf-8-sig
-    inscriptos_por_depto.to_csv(buffer, index=False, encoding='utf-8-sig')
-    buffer.seek(0)
-
-    st.download_button(
-        label="Descargar Inscriptos por Departamento como CSV",
-        data=buffer,
-        file_name='inscriptos_por_depto.csv',
-        mime='text/csv'
-    )
-    
-"""
 
