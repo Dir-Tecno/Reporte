@@ -35,7 +35,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     edad_counts = df_postulaciones_fup[df_postulaciones_fup['Edad'] <= 25]['Edad'].value_counts().reset_index()
     edad_counts.columns = ['Edad', 'Count']  # Renombrar columnas para el gráfico
     
-    st.write("Distribución de Edades (menores o iguales a 25 años)")
+    st.write("Distribución por Edades ")
     
     # Agregar tooltips al gráfico de torta
     fig = px.pie(edad_counts, values='Count', names='Edad', title='Distribución de Edades', 
