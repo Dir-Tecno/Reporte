@@ -91,7 +91,7 @@ def show_companies(df_empresas,df_inscriptos,file_date_inscriptos):
         titulo_grafico = "Distribución de Empresas por Tipo en Toda la Provincia"
     else:
         df_filtered = df_empresas[df_empresas['N_DEPARTAMENTO'] == selected_departamento]
-        titulo_grafico = f"Distribución de Empresas por Tipo en {selected_departamento}"
+        titulo_grafico = f"en {selected_departamento}"
 
     # Primero eliminar duplicados de CUIT
     df_filtered_unique = df_filtered.drop_duplicates(subset=['CUIT'])
