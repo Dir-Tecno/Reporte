@@ -5,8 +5,46 @@ from datetime import datetime
 import io
 import pydeck as pdk
 import plotly.express as px
+import requests  # Añadir al inicio del archivo
 
+# Configura tu Webhook URL de Slack (deberás crear uno en tu workspace de Slack)
+SLACK_WEBHOOK_URL = st.secrets["slack"]["webhook_url"]
 
+def enviar_a_slack(comentario, valoracion):
+    # Obtener el webhook URL desde secrets
+    SLACK_WEBHOOK_URL = st.secrets["slack"]["webhook_url"]
+    
+    mensaje = {
+        "blocks": [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "📝 Nuevo Comentario Recibido"
+                }
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Comentario:*\n{comentario}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Valoración:*\n{'⭐' * valoracion}"
+                    }
+                ]
+            }
+        ]
+    }
+    
+    try:
+        response = requests.post(SLACK_WEBHOOK_URL, json=mensaje)
+        return response.status_code == 200
+    except Exception as e:
+        st.error(f"Error al enviar a Slack: {str(e)}")
+        return False
 
 def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_poblacion, file_date_inscripciones, file_date_inscriptos, file_date_poblacion, geojson_data):
     
@@ -165,12 +203,13 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     st.markdown("### Programas Empleo +26")
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
-    """
+    
     # Buzón de mensajes y valoración del reporte
     st.sidebar.header("📝 Buzón de Mensajes")
+    st.sidebar.caption("Dirección de Tecnología y Análisis de Datos")
 
     # Área de texto para comentarios
-    comentario = st.sidebar.text_area("Deja tu comentario sobre el reporte:", "", height=100)
+    comentario = st.sidebar.text_area("Para poder ofrecerte los mejores reportes posibles, tu opinión es muy valiosa. Nos encantaría recibir tus comentarios sobre el reporte y saber en qué aspectos podemos mejorarlo. ¡Muchas gracias por ayudarnos a crecer y mejorar!", "", height=100)
 
     # Selector de valoración
     valoracion = st.sidebar.selectbox("Valora el reporte:", [1, 2, 3, 4, 5])
@@ -178,9 +217,13 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     # Botón para enviar el mensaje
     if st.sidebar.button("Enviar"):
         if comentario:
-            st.sidebar.success("✅ Gracias por tu comentario!")
-            st.sidebar.write(f"**Comentario:** {comentario}")
-            st.sidebar.write(f"**Valoración:** {valoracion} estrellas")
+            # Intentar enviar a Slack
+            if enviar_a_slack(comentario, valoracion):
+                st.sidebar.success("✅ Gracias por tu comentario! El mensaje ha sido enviado.")
+                st.sidebar.write(f"**Comentario:** {comentario}")
+                st.sidebar.write(f"**Valoración:** {valoracion} estrellas")
+            else:
+                st.sidebar.error("❌ Hubo un error al enviar el mensaje a Slack.")
         else:
             st.sidebar.warning("⚠️ Por favor, escribe un comentario antes de enviar.")
 
@@ -197,7 +240,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         #st.write("No hay inscripciones para mostrar en el rango de fechas seleccionado.")
         #return
     
-    """
+    
 
     # Calcular edades en inscripciones
     fecha_actual = pd.Timestamp(datetime.now())

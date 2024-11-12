@@ -14,11 +14,11 @@ def calculate_cupo(cantidad_empleados, empleador):
     elif cantidad_empleados <= 7:
         return 2
     elif cantidad_empleados <= 30:
-        return int(0.2 * cantidad_empleados)
+        return math.ceil(0.2 * cantidad_empleados)
     elif cantidad_empleados <= 165:
-        return int(0.15 * cantidad_empleados)
+        return math.ceil(0.15 * cantidad_empleados)
     else:
-        return int(0.1 * cantidad_empleados)
+        return math.ceil(0.1 * cantidad_empleados)
 
 def show_companies(df_empresas, df_inscriptos, file_date):
     # Asegúrate de que 'CANTIDAD_EMPLEADOS' sea numérico

@@ -52,7 +52,7 @@ gdf = gdf.to_crs(epsg=4326)
 geojson_data = gdf.__geo_interface__
 
 # Crear las pestañas
-tab1, tab2, tab3 = st.tabs(["Inscripciones", "Empresas", "Respuestas"])
+tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
 
 with tab1:
     # Mostrar inscripciones
@@ -62,6 +62,4 @@ with tab2:
     # Mostrar empresas
     show_companies(dfs[1] ,dfs[2], file_dates[2])
 
-with tab3:
-    # Mostrar respuestas
-    show_responses(dfs[4], file_dates[4])
+
