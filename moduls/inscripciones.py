@@ -50,7 +50,8 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_inscriptos_ppp = df_inscriptos[df_inscriptos['IDETAPA'] == 53]
     df_match_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 8]
 
-    
+    st.info("⭐ En la pestaña empresas se agregó el reporte de empresas adheridas y su rubro declarado al momento de adherirse a programas de empleo")
+
     # REPORTE PPP
     st.markdown("### Programa Primer Paso")
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
