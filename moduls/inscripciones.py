@@ -48,6 +48,10 @@ def enviar_a_slack(comentario, valoracion):
 
 def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_poblacion, file_date_inscripciones, file_date_inscriptos, file_date_poblacion, geojson_data):
     
+    df_inscriptos_ppp = df_inscriptos[df_inscriptos['IDETAPA'] == 53]
+    df_match_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 8]
+
+    
     ####### REPORTE PPP #############
     st.markdown("### Programa Primer Paso")
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
@@ -55,6 +59,17 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     # Calcular total de postulantes únicos
     total_postulantes_ppp = df_postulaciones_fup['CUIL'].nunique()
     st.metric(label="Total Postulantes PPP", value=total_postulantes_ppp)
+
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        # Calcular total de matchs únicos
+        total_match_ppp = df_match_ppp['CUIL'].shape[0]
+        st.metric(label="Total Match PPP", value=total_match_ppp)
+    with col1:
+        # Calcular total de matchs únicos
+        total_match_ppp_unicos = df_match_ppp['CUIL'].nunique()
+        st.metric(label="Total Match de personas unicas PPP", value=total_match_ppp_unicos)
+
 
     # Gráfico de torta con la edad
     df_postulaciones_fup['FEC_NACIMIENTO'] = pd.to_datetime(df_postulaciones_fup['FEC_NACIMIENTO'], errors='coerce')
@@ -168,7 +183,10 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         df_inscripciones['FEC_NACIMIENTO'] = pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'], errors='coerce')
         df_inscripciones = df_inscripciones.dropna(subset=['FEC_INSCRIPCION', 'FEC_NACIMIENTO'])
 
+
+
     # Convertir la columna FER_NAC en df_inscriptos a fecha
+
     df_inscriptos['FER_NAC'] = pd.to_datetime(df_inscriptos['FER_NAC'], errors='coerce')
     df_inscriptos['FEC_SIST'] = pd.to_datetime(df_inscriptos['FEC_SIST'], errors='coerce')
     df_inscriptos = df_inscriptos.copy()  # Asegurarse de trabajar con una copia
@@ -360,13 +378,13 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         )
 """
     # Crear dos columnas para los botones de descarga
-    st.markdown("### Descarga de bases")
+    st.header("### Descarga de bases PPP y Empleo+26")
     col1, col2 = st.columns(2)
     
     
     with col1:
         buffer1 = io.BytesIO()
-        col_inscripcion = ['ID_FICHA' ,'APELLIDO' ,'NOMBRE' ,'CUIL','N_ESTADO_FICHA' ,'NUMERO_DOCUMENTO' ,'FER_NAC','EDAD','SEXO', 'FEC_SIST' ,'CALLE' ,'NUMERO' ,'BARRIO' ,'N_LOCALIDAD', 'N_DEPARTAMENTO' ,'TEL_FIJO' ,'TEL_CELULAR' ,'CONTACTO' ,'MAIL' ,'ES_DISCAPACITADO' ,'CERTIF_DISCAP' ,'FEC_SIST' ,'MODALIDAD' ,'TAREAS' ,'ALTA_TEMPRANA' ,'ID_MOD_CONT_AFIP' ,'MOD_CONT_AFIP' ,'FEC_MODIF' ,'RAZON_SOCIAL' ,'EMP_CUIT' ,'CANT_EMP' ,'EMP_CALLE' ,'EMP_NUMERO' ,'EMP_N_LOCALIDAD' ,'EMP_N_DEPARTAMENTO' ,'EMP_CELULAR' ,'EMP_MAIL' ,'EMP_ES_COOPERATIVA' ,'EU_NOMBRE' ,'EMP_APELLIDO' ,'EU_MAIL' ,'EU_TELEFONO']
+        col_inscripcion = ['ID_FICHA' ,'APELLIDO' ,'NOMBRE' ,'CUIL','N_ESTADO_FICHA','IDETAPA' ,'NUMERO_DOCUMENTO' ,'FER_NAC','EDAD','SEXO', 'FEC_SIST' ,'CALLE' ,'NUMERO' ,'BARRIO' ,'N_LOCALIDAD', 'N_DEPARTAMENTO' ,'TEL_FIJO' ,'TEL_CELULAR' ,'CONTACTO' ,'MAIL' ,'ES_DISCAPACITADO' ,'CERTIF_DISCAP' ,'FEC_SIST' ,'MODALIDAD' ,'TAREAS' ,'ALTA_TEMPRANA' ,'ID_MOD_CONT_AFIP' ,'MOD_CONT_AFIP' ,'FEC_MODIF' ,'RAZON_SOCIAL' ,'EMP_CUIT' ,'CANT_EMP' ,'EMP_CALLE' ,'EMP_NUMERO' ,'EMP_N_LOCALIDAD' ,'EMP_N_DEPARTAMENTO' ,'EMP_CELULAR' ,'EMP_MAIL' ,'EMP_ES_COOPERATIVA' ,'EU_NOMBRE' ,'EMP_APELLIDO' ,'EU_MAIL' ,'EU_TELEFONO']
         
         df_i = df_inscriptos[col_inscripcion]
 
