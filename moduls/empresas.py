@@ -88,7 +88,7 @@ def show_companies(df_empresas,df_inscriptos,file_date_inscriptos):
     # Filtrar DataFrame basado en la selección
     if selected_departamento == "Todos":
         df_filtered = df_empresas
-        titulo_grafico = "Distribución de Empresas por Tipo en Toda la Provincia"
+        titulo_grafico = ""
     else:
         df_filtered = df_empresas[df_empresas['N_DEPARTAMENTO'] == selected_departamento]
         titulo_grafico = f"en {selected_departamento}"
