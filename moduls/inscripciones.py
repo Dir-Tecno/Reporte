@@ -7,8 +7,7 @@ import pydeck as pdk
 import plotly.express as px
 import requests  # Añadir al inicio del archivo
 
-# Configura tu Webhook URL de Slack (deberás crear uno en tu workspace de Slack)
-SLACK_WEBHOOK_URL = st.secrets["slack"]["webhook_url"]
+
 
 def enviar_a_slack(comentario, valoracion):
     # Obtener el webhook URL desde secrets
@@ -52,24 +51,46 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_match_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 8]
 
     
-    ####### REPORTE PPP #############
+    # REPORTE PPP
     st.markdown("### Programa Primer Paso")
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
-    
-    # Calcular total de postulantes únicos
+
     total_postulantes_ppp = df_postulaciones_fup['CUIL'].nunique()
-    st.metric(label="Total Postulantes PPP", value=total_postulantes_ppp)
-
-    col1, col2 = st.columns([1, 2])
+    total_match_ppp = df_match_ppp['CUIL'].shape[0]
+    total_match_ppp_unicos = df_match_ppp['CUIL'].nunique()
+    
+    col1, col2, col3 = st.columns(3)
+    
     with col1:
-        # Calcular total de matchs únicos
-        total_match_ppp = df_match_ppp['CUIL'].shape[0]
-        st.metric(label="Total Match PPP", value=total_match_ppp)
-    with col1:
-        # Calcular total de matchs únicos
-        total_match_ppp_unicos = df_match_ppp['CUIL'].nunique()
-        st.metric(label="Total Match de personas unicas PPP", value=total_match_ppp_unicos)
-
+        st.markdown(
+            f"""
+            <div style="background-color:#d0e3f1;padding:10px;border-radius:5px;">
+                <strong>Total Postulantes PPP</strong><br>
+                <span style="font-size:24px;">{total_postulantes_ppp}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col2:
+        st.markdown(
+            f"""
+            <div style="background-color:#d6efd6;padding:10px;border-radius:5px;">
+                <strong>Total Match PPP</strong><br>
+                <span style="font-size:24px;">{total_match_ppp}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col3:
+        st.markdown(
+            f"""
+            <div style="background-color:#ffecd2;padding:10px;border-radius:5px;">
+                <strong>Total Match de Personas Únicas PPP</strong><br>
+                <span style="font-size:24px;">{total_match_ppp_unicos}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
 
     # Gráfico de torta con la edad
     df_postulaciones_fup['FEC_NACIMIENTO'] = pd.to_datetime(df_postulaciones_fup['FEC_NACIMIENTO'], errors='coerce')
@@ -87,9 +108,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     # Filtrar mayores de 25 años
     edad_counts = df_postulaciones_fup[df_postulaciones_fup['Edad'] <= 25]['Edad'].value_counts().reset_index()
     edad_counts.columns = ['Edad', 'Count']  # Renombrar columnas para el gráfico
-    
-    st.write("Distribución por Edades ")
-    
+        
     # Agregar tooltips al gráfico de torta
     fig = px.pie(edad_counts, values='Count', names='Edad', title='Distribución de Edades', 
                  hover_data=['Count'], labels={'Edad': 'Edad'})
