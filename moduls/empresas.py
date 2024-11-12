@@ -48,6 +48,21 @@ def show_companies(df_empresas,df_inscriptos,file_date_inscriptos):
     # Mostrar la tabla de empresas adheridas
     st.dataframe(df_display, hide_index=True)
 
+     # Filtro y gráfico de distribución por tipo de empresa
+    localidades = df_empresas['N_LOCALIDAD'].unique()
+    selected_localidad = st.selectbox("Seleccione una Localidad:", localidades)
+    df_filtered = df_empresas[df_empresas['N_LOCALIDAD'] == selected_localidad]
+    df_tipo_agrupado = df_filtered.groupby('NOMBRE_TIPO_EMPRESA').size().reset_index(name='Cantidad')
+    df_tipo_agrupado['Porcentaje'] = (df_tipo_agrupado['Cantidad'] / df_tipo_agrupado['Cantidad'].sum()) * 100
+
+    chart = alt.Chart(df_tipo_agrupado).mark_bar().encode(
+        x=alt.X('Porcentaje:Q', title='Porcentaje de Empresas'),
+        y=alt.Y('NOMBRE_TIPO_EMPRESA:N', title='Tipo de Empresa', sort='-x'),
+        tooltip=['NOMBRE_TIPO_EMPRESA', 'Cantidad', 'Porcentaje']
+    ).properties(width=600, height=400, title=f"Distribución de Empresas por Tipo en {selected_localidad}")
+    
+    st.altair_chart(chart, use_container_width=True)
+
     # Resto del código de visualización
     if not df_empresas.empty:
         st.subheader("Distribución de Empleados por Empresa y Puesto")
@@ -76,17 +91,4 @@ def show_companies(df_empresas,df_inscriptos,file_date_inscriptos):
         st.pyplot(plt)
         plt.clf()
 
-    # Filtro y gráfico de distribución por tipo de empresa
-    localidades = df_empresas['N_LOCALIDAD'].unique()
-    selected_localidad = st.selectbox("Seleccione una Localidad:", localidades)
-    df_filtered = df_empresas[df_empresas['N_LOCALIDAD'] == selected_localidad]
-    df_tipo_agrupado = df_filtered.groupby('NOMBRE_TIPO_EMPRESA').size().reset_index(name='Cantidad')
-    df_tipo_agrupado['Porcentaje'] = (df_tipo_agrupado['Cantidad'] / df_tipo_agrupado['Cantidad'].sum()) * 100
-
-    chart = alt.Chart(df_tipo_agrupado).mark_bar().encode(
-        x=alt.X('Porcentaje:Q', title='Porcentaje de Empresas'),
-        y=alt.Y('NOMBRE_TIPO_EMPRESA:N', title='Tipo de Empresa', sort='-x'),
-        tooltip=['NOMBRE_TIPO_EMPRESA', 'Cantidad', 'Porcentaje']
-    ).properties(width=600, height=400, title=f"Distribución de Empresas por Tipo en {selected_localidad}")
-    
-    st.altair_chart(chart, use_container_width=True)
+   
