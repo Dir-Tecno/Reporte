@@ -52,7 +52,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
 
 
     # Agregar información a la pestaña inscripciones
-    st.info("⭐ En la pestaña inscripciones se agregó la cantidad de horarios entregados por beneficiarios Empleo +26.")
+    st.info("⭐ En la pestaña inscripciones se agregó la cantidad de horarios entregados por empresas en funcion de sus beneficiarios.")
     st.info("⭐ En la pestaña empresas se agregó el reporte de empresas adheridas y su rubro declarado al momento de adherirse a programas de empleo.")
 
 
