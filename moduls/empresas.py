@@ -19,7 +19,7 @@ def calculate_cupo(cantidad_empleados, empleador):
     else:
         return math.ceil(0.1 * cantidad_empleados)
 
-def show_companies(df_empresas,df_inscriptos,file_date_inscriptos):
+def show_companies(df_empresas):
     # Asegúrate de que 'CANTIDAD_EMPLEADOS' sea numérico
     df_empresas['CANTIDAD_EMPLEADOS'] = pd.to_numeric(df_empresas['CANTIDAD_EMPLEADOS'], errors='coerce')
 

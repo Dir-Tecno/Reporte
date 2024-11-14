@@ -45,7 +45,7 @@ def enviar_a_slack(comentario, valoracion):
         st.error(f"Error al enviar a Slack: {str(e)}")
         return False
 
-def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_poblacion, file_date_inscripciones, file_date_inscriptos, file_date_poblacion, geojson_data):
+def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_poblacion, file_date_inscripciones, geojson_data):
     
     df_inscriptos_ppp = df_inscriptos[df_inscriptos['IDETAPA'] == 53]
     df_match_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 8]
@@ -374,7 +374,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         <div style="background-color:rgb(148 217 118);padding:10px;border-radius:5px;">
             <strong>Beneficiarios</strong><br>
             <span style="font-size:24px;">{total_benef}</span><br>
-            <strong>Cantidad de horarios entregados:</strong><br>
+            <strong>Cantidad de horarios presentados:</strong><br>
             <span style="font-size:24px;">{total_tareas_count}</span><br>
         </div>
         """, 
@@ -409,28 +409,39 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
 """
  
     
-    # Crear dos columnas para el botón de descarga
-    st.markdown("### Descarga de bases PPP y Empleo+26")
-    col1, col2 = st.columns(2)
+    with st.sidebar:
+        # Agregar un separador visual
+        st.markdown("---")
 
-    # Unir los DataFrames mediante pd.concat en lugar de append
-    df_union = pd.concat([df_inscriptos_ppp, df_inscriptos_26], ignore_index=True)
+        # Título de la sección de descarga
+        st.markdown("### 📥 Descarga de Bases")
 
-    # Columna : Botón de descarga para df_union (con el append de las bases)
-    with col1:
+        # Preparar el DataFrame para la descarga
+        col_inscripcion = ['ID_FICHA', 'APELLIDO', 'NOMBRE', 'CUIL', 'N_ESTADO_FICHA', 'IDETAPA', 
+                           'NUMERO_DOCUMENTO', 'FER_NAC', 'EDAD', 'SEXO', 'FEC_SIST', 'CALLE', 
+                           'NUMERO', 'BARRIO', 'N_LOCALIDAD', 'N_DEPARTAMENTO', 'TEL_FIJO', 
+                           'TEL_CELULAR', 'CONTACTO', 'MAIL', 'ES_DISCAPACITADO', 'CERTIF_DISCAP', 
+                           'FEC_SIST', 'MODALIDAD', 'TAREAS', 'ALTA_TEMPRANA', 'ID_MOD_CONT_AFIP', 
+                           'MOD_CONT_AFIP', 'FEC_MODIF', 'RAZON_SOCIAL', 'EMP_CUIT', 'CANT_EMP', 
+                           'EMP_CALLE', 'EMP_NUMERO', 'EMP_N_LOCALIDAD', 'EMP_N_DEPARTAMENTO', 
+                           'EMP_CELULAR', 'EMP_MAIL', 'EMP_ES_COOPERATIVA', 'EU_NOMBRE', 
+                           'EMP_APELLIDO', 'EU_MAIL', 'EU_TELEFONO']
+
+        df_i = df_inscriptos[col_inscripcion]
+
+        # Preparar el buffer para el archivo Excel
         buffer2 = io.BytesIO()
-
-        # Guardar el DataFrame df_union con las bases concatenadas
         with pd.ExcelWriter(buffer2, engine='openpyxl') as writer:
-            df_union.to_excel(writer, index=False, sheet_name='Union PPP y Empleo+26')  # Guardar el df_union
-            buffer2.seek(0)
+            df_i.to_excel(writer, index=False, sheet_name='Union PPP y Empleo+26')
+        buffer2.seek(0)
 
-        # Botón de descarga para df_union
+        # Botón de descarga con estilo
         st.download_button(
-            label="Descargar PPP y Empleo+26 como Excel",
+            label="📊 Descargar PPP y Empleo+26",
             data=buffer2,
             file_name='reporte_ppp_empleo26.xlsx',
-            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            help="Descarga el reporte completo de PPP y Empleo+26 en formato Excel"
         )
 
 
