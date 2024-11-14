@@ -4,7 +4,7 @@ import streamlit as st
 from moduls.carga import load_data_from_bucket, download_geojson_from_bucket
 from moduls.inscripciones import show_inscriptions
 from moduls.empresas import show_companies
-from moduls.respuestas import show_responses
+#from moduls.respuestas import show_responses
 from google.oauth2 import service_account
 
 # Configuración de las credenciales
