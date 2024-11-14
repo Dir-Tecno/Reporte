@@ -50,7 +50,12 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_inscriptos_ppp = df_inscriptos[df_inscriptos['IDETAPA'] == 53]
     df_match_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 8]
 
-    st.info("⭐ En la pestaña empresas se agregó el reporte de empresas adheridas y su rubro declarado al momento de adherirse a programas de empleo")
+
+    # Agregar información a la pestaña inscripciones
+    st.info("⭐ En la pestaña inscripciones se agregó la cantidad de horarios entregados por beneficiarios Empleo +26.")
+    st.info("⭐ En la pestaña empresas se agregó el reporte de empresas adheridas y su rubro declarado al momento de adherirse a programas de empleo.")
+
+
 
     # REPORTE PPP
     st.markdown("### Programa Primer Paso")
@@ -59,9 +64,15 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     total_postulantes_ppp = df_postulaciones_fup['CUIL'].nunique()
     total_match_ppp = df_match_ppp['CUIL'].shape[0]
     total_match_ppp_unicos = df_match_ppp['CUIL'].nunique()
+
     
-    col1, col2, col3 = st.columns(3)
+
     
+#Columnas con tarjetas de información
+    
+    col1, col2, col3  = st.columns(3)
+
+        
     with col1:
         st.markdown(
             f"""
@@ -92,6 +103,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             """, 
             unsafe_allow_html=True
         )
+
 
     # Gráfico de torta con la edad
     df_postulaciones_fup['FEC_NACIMIENTO'] = pd.to_datetime(df_postulaciones_fup['FEC_NACIMIENTO'], errors='coerce')
@@ -171,10 +183,22 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         center={"lat": -31.416, "lon": -64.183},
         opacity=0.5,
         labels={'INSCRIPTOS': 'Número de Inscriptos'},
+        hover_data={'NOMDEPTO': True, 'INSCRIPTOS': True},  
     )
 
     # Actualizar la geometría
     ig.update_geos(fitbounds="locations", visible=False)
+
+    # Mejorar el layout para asegurar que el gráfico ocupe todo el espacio disponible
+    ig.update_layout(
+    title="Distribución de postulaciones por Departamento",
+    geo=dict(
+        showland=True,  # Mostrar la tierra
+        landcolor="lightgray",
+        subunitcolor="white",  # Color de los límites subnacionales
+    ),
+    margin={"r": 0, "t": 0, "l": 0, "b": 0}  # Ajuste de márgenes
+)
 
     # Mostrar el gráfico
     st.plotly_chart(ig, use_container_width=True)
@@ -198,44 +222,50 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     
     # Convertir las fechas en inscripciones
     if 'FEC_INSCRIPCION' in df_inscripciones.columns:
-        df_inscripciones['FEC_INSCRIPCION'] = pd.to_datetime(df_inscripciones['FEC_INSCRIPCION'], errors='coerce')
+        df_inscripciones.loc[:, 'FEC_INSCRIPCION'] = pd.to_datetime(df_inscripciones['FEC_INSCRIPCION'], errors='coerce')
+
     if 'FEC_NACIMIENTO' in df_inscripciones.columns:
-        df_inscripciones['FEC_NACIMIENTO'] = pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'], errors='coerce')
-        df_inscripciones = df_inscripciones.dropna(subset=['FEC_INSCRIPCION', 'FEC_NACIMIENTO'])
-
-
+        df_inscripciones.loc[:, 'FEC_NACIMIENTO'] = pd.to_datetime(df_inscripciones['FEC_NACIMIENTO'], errors='coerce')
+        df_inscripciones.dropna(subset=['FEC_INSCRIPCION', 'FEC_NACIMIENTO'], inplace=True)
 
     # Convertir la columna FER_NAC en df_inscriptos a fecha
-
     df_inscriptos['FER_NAC'] = pd.to_datetime(df_inscriptos['FER_NAC'], errors='coerce')
     df_inscriptos['FEC_SIST'] = pd.to_datetime(df_inscriptos['FEC_SIST'], errors='coerce')
-    df_inscriptos = df_inscriptos.copy()  # Asegurarse de trabajar con una copia
+    df_inscriptos['FER_NAC'].isnull().sum()
 
-    # Filtrar solo los CTI
-    df_cti = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 12]
 
-    # df_descarga_cti
-    df_cti_descarga = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin([12, 13, 14])]
+    # Filtrar registros de la etapa 51
+    df_inscriptos_26 = df_inscriptos[df_inscriptos['IDETAPA'] == 51].copy()
 
-    # Filtrar solo los BENEFICIARIOS CTI
-    df_cti_benef = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 13]
+    # Filtrar solo los CTI (estado ficha 12)
+    df_cti = df_inscriptos_26[df_inscriptos_26['ID_EST_FIC'] == 12]
 
-    # Filtrar solo los BENEFICIARIOS CTI
-    df_cti_alta = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 14]
+    # Filtrar registros de descarga y otros estados CTI (estados 12, 13, 14)
+    df_cti_descarga = df_inscriptos_26[df_inscriptos_26['ID_EST_FIC'].isin([12, 13, 14])]
 
-    # Filtrar solo los registros con ID_EST_FICHA = 3
-    df_beneficiarios = df_inscriptos[df_inscriptos['ID_EST_FIC'] == 3]
+    # Filtrar solo los BENEFICIARIOS CTI (estado ficha 13)
+    df_cti_benef = df_inscriptos_26[df_inscriptos_26['ID_EST_FIC'] == 13]
 
-    # Filtrar solo los registros con que quedan aptos
-    df_postulantes_aptos = df_inscriptos[(df_inscriptos['ID_EST_FIC'] == 8) & (df_inscriptos['ID_EMP'].isnull())]
+    # Filtrar solo los CTI Alta Temprana (estado ficha 14)
+    df_cti_alta = df_inscriptos_26[df_inscriptos_26['ID_EST_FIC'] == 14]
 
-    # Filtrar solo los registros con que quedan para la repesca
-    df_postulantes_repesca = df_inscriptos[(df_inscriptos['ID_EST_FIC'] == 8) & (df_inscriptos['ID_EMP'].notnull())]
+    # Filtrar solo los registros con ID_EST_FICHA = 3 (Beneficiarios)
+    df_beneficiarios = df_inscriptos_26[df_inscriptos_26['ID_EST_FIC'] == 3]
 
-    # Filtrar solo los registros con ID_EST_FICHA = 8
-    df_inscriptos = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin([8,3])]
+    # Filtrar postulantes aptos (estado ficha 8 y ID_EMP vacío)
+    df_postulantes_aptos = df_inscriptos_26[(df_inscriptos_26['ID_EST_FIC'] == 8) & (df_inscriptos_26['ID_EMP'].isnull())]
 
-   
+    # Filtrar postulantes para repesca (estado ficha 8 y ID_EMP no vacío)
+    df_postulantes_repesca = df_inscriptos_26[(df_inscriptos_26['ID_EST_FIC'] == 8) & (df_inscriptos_26['ID_EMP'].notnull())]
+
+    # Filtrar solo los registros con ID_EST_FICHA = 8 o 3 (aptos o beneficiarios)
+    df_inscriptos = df_inscriptos_26[df_inscriptos_26['ID_EST_FIC'].isin([8, 3])]
+
+    total_tareas = df_inscriptos['TAREAS'].notna() & df_inscriptos['TAREAS'].str.strip().ne('')
+    total_tareas_count = total_tareas.sum()
+
+
+
 
     # Pestaña inscripciones
     st.markdown("### Programas Empleo +26")
@@ -265,34 +295,14 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         else:
             st.sidebar.warning("⚠️ Por favor, escribe un comentario antes de enviar.")
 
-    # Filtros de fechas para inscripciones
-    #if 'FEC_INSCRIPCION' in df_inscripciones.columns:
-        #st.sidebar.header("Filtros de Fechas")
-        #fecha_min, fecha_max = df_inscripciones['FEC_INSCRIPCION'].min().date(), df_inscripciones['FEC_INSCRIPCION'].max().date()
-        #fecha_inicio = st.sidebar.date_input("Fecha de Inicio", value=fecha_min, min_value=fecha_min, max_value=fecha_max)
-        #fecha_fin = st.sidebar.date_input("Fecha de Fin", value=fecha_max, min_value=fecha_min, max_value=fecha_max)
-        #df_inscripciones = df_inscripciones[(df_inscripciones['FEC_INSCRIPCION'].dt.date >= fecha_inicio) & 
-        #                                    (df_inscripciones['FEC_INSCRIPCION'].dt.date <= fecha_fin)]
-    
-    #if df_inscripciones.empty:
-        #st.write("No hay inscripciones para mostrar en el rango de fechas seleccionado.")
-        #return
-    
-    
+
+
 
     # Calcular edades en inscripciones
     fecha_actual = pd.Timestamp(datetime.now())
 
     # Calcular edades en inscriptos
     df_inscriptos['Edad'] = (fecha_actual - df_inscriptos['FER_NAC']).dt.days // 365
-
-    # Calcular personas de 45 o más años en inscriptos
-    #count_45_inscriptos = df_inscriptos[df_inscriptos['Edad'] >= 45].shape[0]
-    # Calcular personas de entre 26 y 44 en inscriptos
-    #count_26_44 = df_inscriptos[(df_inscriptos['Edad'] > 26) & (df_inscriptos['Edad'] < 45)]['CUIL'].nunique()
-
-    # Calcular el número de CUIL únicos
-    unique_cuil_count = df_inscriptos['CUIL'].nunique()
      
     # Filtrar inscriptos para los departamentos específicos y que tengan menos de 45 años
     df_dept_specific = df_inscriptos[
@@ -311,8 +321,6 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             "ISCHILIN"
         ])) & (df_inscriptos['Edad'] < 45)
     ]
-
-    total_dept_specific = df_dept_specific.shape[0]
 
     # Cálculo total
     #total_inscripciones = df_inscripciones.shape[0]
@@ -362,14 +370,16 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(
-            f"""
-            <div style="background-color:rgb(148 217 118);padding:10px;border-radius:5px;">
-                <strong>Beneficiarios</strong><br>
-                <span style="font-size:24px;">{total_benef}</span>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
+        f"""
+        <div style="background-color:rgb(148 217 118);padding:10px;border-radius:5px;">
+            <strong>Beneficiarios</strong><br>
+            <span style="font-size:24px;">{total_benef}</span><br>
+            <strong>Cantidad de horarios entregados:</strong><br>
+            <span style="font-size:24px;">{total_tareas_count}</span><br>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
     with col2:
         st.markdown(
             f"""
@@ -397,42 +407,29 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             unsafe_allow_html=True
         )
 """
-    # Crear dos columnas para los botones de descarga
-    st.header("### Descarga de bases PPP y Empleo+26")
+ 
+    
+    # Crear dos columnas para el botón de descarga
+    st.markdown("### Descarga de bases PPP y Empleo+26")
     col1, col2 = st.columns(2)
-    
-    
+
+    # Unir los DataFrames mediante pd.concat en lugar de append
+    df_union = pd.concat([df_inscriptos_ppp, df_inscriptos_26], ignore_index=True)
+
+    # Columna : Botón de descarga para df_union (con el append de las bases)
     with col1:
-        buffer1 = io.BytesIO()
-        col_inscripcion = ['ID_FICHA' ,'APELLIDO' ,'NOMBRE' ,'CUIL','N_ESTADO_FICHA','IDETAPA' ,'NUMERO_DOCUMENTO' ,'FER_NAC','EDAD','SEXO', 'FEC_SIST' ,'CALLE' ,'NUMERO' ,'BARRIO' ,'N_LOCALIDAD', 'N_DEPARTAMENTO' ,'TEL_FIJO' ,'TEL_CELULAR' ,'CONTACTO' ,'MAIL' ,'ES_DISCAPACITADO' ,'CERTIF_DISCAP' ,'FEC_SIST' ,'MODALIDAD' ,'TAREAS' ,'ALTA_TEMPRANA' ,'ID_MOD_CONT_AFIP' ,'MOD_CONT_AFIP' ,'FEC_MODIF' ,'RAZON_SOCIAL' ,'EMP_CUIT' ,'CANT_EMP' ,'EMP_CALLE' ,'EMP_NUMERO' ,'EMP_N_LOCALIDAD' ,'EMP_N_DEPARTAMENTO' ,'EMP_CELULAR' ,'EMP_MAIL' ,'EMP_ES_COOPERATIVA' ,'EU_NOMBRE' ,'EMP_APELLIDO' ,'EU_MAIL' ,'EU_TELEFONO']
-        
-        df_i = df_inscriptos[col_inscripcion]
-
-        with pd.ExcelWriter(buffer1, engine='openpyxl') as writer:
-            df_i.to_excel(writer, index=False, sheet_name='Inscriptos')
-            #writer.save()
-            buffer1.seek(0)
-
-        st.download_button(
-            label="Descargar Inscriptos REEL como Excel (con beneficiarios)",
-            data=buffer1,
-            file_name='df_inscriptos.xlsx',
-            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-
-    # Botón de descarga para df_cti
-    with col2:
         buffer2 = io.BytesIO()
-        df_c = df_cti_descarga[['ID_FICHA' ,'APELLIDO' ,'NOMBRE' ,'CUIL' ,'N_ESTADO_FICHA', 'NUMERO_DOCUMENTO' ,'FER_NAC','EDAD','SEXO', 'FEC_SIST' ,'CALLE' ,'NUMERO' ,'BARRIO' ,'N_LOCALIDAD', 'N_DEPARTAMENTO' ,'TEL_FIJO' ,'TEL_CELULAR' ,'CONTACTO' ,'MAIL' ,'ES_DISCAPACITADO' ,'CERTIF_DISCAP' ,'FEC_SIST' ,'MODALIDAD' ,'TAREAS' ,'ALTA_TEMPRANA' ,'ID_MOD_CONT_AFIP' ,'MOD_CONT_AFIP' ,'FEC_MODIF' ,'RAZON_SOCIAL' ,'EMP_CUIT' ,'CANT_EMP' ,'EMP_CALLE' ,'EMP_NUMERO' ,'EMP_N_LOCALIDAD' ,'EMP_N_DEPARTAMENTO' ,'EMP_CELULAR' ,'EMP_MAIL' ,'EMP_ES_COOPERATIVA' ,'EU_NOMBRE' ,'EMP_APELLIDO' ,'EU_MAIL' ,'EU_TELEFONO']]
+
+        # Guardar el DataFrame df_union con las bases concatenadas
         with pd.ExcelWriter(buffer2, engine='openpyxl') as writer:
-            df_c.to_excel(writer, index=False, sheet_name='CTI')
-            #writer.save()
+            df_union.to_excel(writer, index=False, sheet_name='Union PPP y Empleo+26')  # Guardar el df_union
             buffer2.seek(0)
 
+        # Botón de descarga para df_union
         st.download_button(
-            label="Descargar CTI como Excel",
+            label="Descargar PPP y Empleo+26 como Excel",
             data=buffer2,
-            file_name='df_cti.xlsx',
+            file_name='reporte_ppp_empleo26.xlsx',
             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
 
