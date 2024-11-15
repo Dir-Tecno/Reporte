@@ -427,8 +427,10 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
                            'EMP_CELULAR', 'EMP_MAIL', 'EMP_ES_COOPERATIVA', 'EU_NOMBRE', 
                            'EMP_APELLIDO', 'EU_MAIL', 'EU_TELEFONO']
 
-        df_i = df_inscriptos[col_inscripcion]
-
+        # Filtrar df_inscriptos por los estados de ficha requeridos antes de seleccionar las columnas
+        estados_validos = [8, 3, 12, 13, 14]
+        df_i = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin(estados_validos)][col_inscripcion]
+        
         # Preparar el buffer para el archivo Excel
         buffer2 = io.BytesIO()
         with pd.ExcelWriter(buffer2, engine='openpyxl') as writer:
