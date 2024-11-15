@@ -259,9 +259,9 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_postulantes_repesca = df_inscriptos_26[(df_inscriptos_26['ID_EST_FIC'] == 8) & (df_inscriptos_26['ID_EMP'].notnull())]
 
     # Filtrar solo los registros con ID_EST_FICHA = 8 o 3 (aptos o beneficiarios)
-    df_inscriptos = df_inscriptos_26[df_inscriptos_26['ID_EST_FIC'].isin([8, 3])]
+    df_benef = df_inscriptos_26[df_inscriptos_26['ID_EST_FIC'] == 3]
 
-    total_tareas = df_inscriptos['TAREAS'].notna() & df_inscriptos['TAREAS'].str.strip().ne('')
+    total_tareas = df_benef['TAREAS'].notna() & df_benef['TAREAS'].str.strip().ne('')
     total_tareas_count = total_tareas.sum()
 
 
