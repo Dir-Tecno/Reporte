@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from datetime import datetime
+from datetime import timedelta 
 import io
 import pydeck as pdk
 import plotly.express as px
@@ -59,6 +60,9 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
 
     # REPORTE PPP
     st.markdown("### Programa Primer Paso")
+    file_date_inscripciones = pd.to_datetime(file_date_inscripciones)  # Convertir el string a fecha
+    # Restar 3 horas a la fecha
+    file_date_inscripciones = file_date_inscripciones - timedelta(hours=3)
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
     total_postulantes_ppp = df_postulaciones_fup['CUIL'].nunique()

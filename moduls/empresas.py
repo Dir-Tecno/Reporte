@@ -38,6 +38,13 @@ def show_companies(df_empresas):
     df_display = df_empresas[['N_LOCALIDAD','N_DEPARTAMENTO', 'CUIT', 'N_EMPRESA', 'NOMBRE_TIPO_EMPRESA','CANTIDAD_EMPLEADOS', 'VACANTES', 'CUPO', 'IMP GANANCIAS', 'IMP IVA', 'MONOTRIBUTO', 'INTEGRANTE', 'EMPLEADOR', 'ACTIVIDAD MONOTRIBUTO']].drop_duplicates(subset='CUIT')
     df_display = df_display.sort_values(by='CUPO', ascending=False).reset_index(drop=True)
 
+    # Asegúrate de que las columnas relevantes sean numéricas
+    df_display['CUIT'] = pd.to_numeric(df_display['CUIT'], errors='coerce')
+    df_display['CANTIDAD_EMPLEADOS'] = pd.to_numeric(df_display['CANTIDAD_EMPLEADOS'], errors='coerce')
+    df_display['CUPO'] = pd.to_numeric(df_display['CUPO'], errors='coerce')
+    df_display['VACANTES'] = pd.to_numeric(df_display['VACANTES'], errors='coerce')
+    # ... otras columnas que necesiten conversión
+
     # Crear subtítulo y métrica de empresas adheridas con aclaración en el label
     empresas_adh = df_display['CUIT'].nunique()
 
