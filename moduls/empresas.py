@@ -140,16 +140,7 @@ def show_companies(df_empresas):
         ).properties(width=600, height=400)
         st.altair_chart(stacked_bar_chart_2, use_container_width=True)
 
-        # Nube de palabras para apariciones por puesto de empleo
-        conteo_puestos = df_empresas.groupby('N_PUESTO_EMPLEO').size().reset_index(name='Conteo')
-        word_freq = dict(zip(conteo_puestos['N_PUESTO_EMPLEO'], conteo_puestos['Conteo']))
-        wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
-        st.subheader("Nube de Palabras de Apariciones por Puesto de Empleo")
-        plt.figure(figsize=(10, 5))
-        plt.imshow(wordcloud, interpolation='bilinear')
-        plt.axis("off")
-        st.pyplot(plt)
-        plt.clf()
+
 
 
    
