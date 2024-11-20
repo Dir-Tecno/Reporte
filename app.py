@@ -33,6 +33,6 @@ with tab2:
 
 with tab3:
     # Mostrar Puestos y Fichas
-    show_puestos(dfs[5])
+    show_puestos(dfs[5],dfs[2],dfs[6])
 
 
