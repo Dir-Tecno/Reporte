@@ -2,7 +2,7 @@ import streamlit as st
 from moduls.carga import load_data_from_bucket
 from moduls.inscripciones import show_inscriptions
 from moduls.empresas import show_companies
-#from moduls.respuestas import show_responses
+from moduls.puestos import show_puestos
 
 
 # Configuración de las credenciales
@@ -21,14 +21,18 @@ dfs, file_dates = load_data_from_bucket(bucket_name, url, key)
 
 
 # Crear las pestañas
-tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
+tab1, tab2,tab3 = st.tabs(["Inscripciones", "Empresas","Analisis de Puestos"])
 
 with tab1:
     # Mostrar inscripciones
-    show_inscriptions(dfs[3], dfs[4], dfs[5], dfs[1], file_dates[2],dfs[0])
+    show_inscriptions(dfs[3], dfs[4], dfs[6], dfs[1], file_dates[2],dfs[0])
 
 with tab2:
     # Mostrar empresas
     show_companies(dfs[2])
+
+with tab3:
+    # Mostrar Puestos y Fichas
+    show_puestos(dfs[5])
 
 
