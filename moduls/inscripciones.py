@@ -50,7 +50,9 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     
     df_inscriptos_ppp = df_inscriptos[df_inscriptos['IDETAPA'] == 53]
     df_match_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 8]
-
+    df_cti_inscripto_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 12]
+    df_cti_validos_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 13]
+    df_cti_benficiario_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 14]
 
     # Agregar información a la pestaña inscripciones
     st.info("⭐ En la pestaña inscripciones se agregó la cantidad de horarios entregados por empresas en funcion de sus beneficiarios.")
@@ -68,8 +70,6 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     total_postulantes_ppp = df_postulaciones_fup['CUIL'].nunique()
     total_match_ppp = df_match_ppp['CUIL'].shape[0]
     total_match_ppp_unicos = df_match_ppp['CUIL'].nunique()
-
-    
 
     
 #Columnas con tarjetas de información
@@ -103,6 +103,41 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             <div style="background-color:#ffecd2;padding:10px;border-radius:5px;">
                 <strong>Total Match de Personas Únicas PPP</strong><br>
                 <span style="font-size:24px;">{total_match_ppp_unicos}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    
+    st.markdown("#### PPP-cti")
+
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(
+            f"""
+            <div style="background-color:#d0e3f1;padding:10px;border-radius:5px;">
+                <strong>CTI Inscriptos PPP</strong><br>
+                <span style="font-size:24px;">{df_cti_inscripto_ppp['CUIL'].nunique()}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col2:
+        st.markdown(
+            f"""
+            <div style="background-color:#d0e3f1;padding:10px;border-radius:5px;">
+                <strong>CTI Validados PPP</strong><br>
+                <span style="font-size:24px;">{df_cti_validos_ppp['CUIL'].nunique()}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col3:
+        st.markdown(
+            f"""
+            <div style="background-color:#d0e3f1;padding:10px;border-radius:5px;">
+                <strong>CTI Beneficiarios PPP</strong><br>
+                <span style="font-size:24px;">{df_cti_benficiario_ppp['CUIL'].nunique()}</span>
             </div>
             """, 
             unsafe_allow_html=True
