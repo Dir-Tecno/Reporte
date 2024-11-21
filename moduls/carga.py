@@ -24,9 +24,11 @@ def load_data_from_bucket(bucket_name, supabase_url, supabase_key):
         # Descargar el archivo desde el bucket
         response = supabase.storage.from_(bucket_name).download(file['name'])
         if file['name'].endswith('.parquet'):
-            df = pd.read_parquet(BytesIO(response))  # Leer el archivo parquet
+            df = pd.read_parquet(BytesIO(response))
+            df.name = file['name']  # Leer el archivo parquet
             dfs.append(df)
             file_dates.append(creation_date)
+              # Asignar el nombre del archivo al DataFrame
         elif file['name'].endswith('.geojson'):
             if isinstance(response, bytes):
                 geojson_dict = json.loads(response.decode('utf-8'))

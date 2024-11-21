@@ -25,7 +25,7 @@ tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
 
 with tab1:
     # Mostrar inscripciones
-    show_inscriptions(dfs[3], dfs[4], dfs[5], dfs[1], file_dates[2],dfs[0])
+    show_inscriptions(dfs[3], dfs[4], dfs[6], dfs[1], file_dates[2],dfs[0])
 
 with tab2:
     # Mostrar empresas
