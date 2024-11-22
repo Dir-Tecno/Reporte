@@ -57,39 +57,54 @@ def show_puestos(df_puestos, df_empresas,df_inscriptos):
         st.subheader("Tabla de Empresas con Fichas por Estado y Cupo Disponible")
 
         # Limpiar los CUITs
-        df_empresas['CUIT'] = df_empresas['CUIT'].str.replace('-', '', regex=False)
-        df_inscriptos['EMP_CUIT'] = df_inscriptos['EMP_CUIT'].str.replace('-', '', regex=False)
+        df_empresas['CUIT'] = df_empresas['CUIT'].str.replace('-', '', regex=False).fillna('')
+        df_inscriptos['EMP_CUIT'] = df_inscriptos['EMP_CUIT'].str.replace('-', '', regex=False).fillna('')
 
-        # Unir los dataframes df_empresas y df_inscriptos por el campo CUIT (df_empresas) y EMP_CUIT (df_inscriptos)
+        # Unir los dataframes
         df_merged = pd.merge(df_inscriptos, df_empresas, left_on='EMP_CUIT', right_on='CUIT', how='left')
 
-        # Filtrar los estados de ficha relevantes
+        # Filtrar los estados relevantes
         estados_relevantes = [
             "INSCRIPTO NO ACEPTADO", "POSTULANTE SIN EMPRESA", "INSCRIPTO - CTI", 
             "RECHAZO FORMAL", "ADHERIDO", "INSCRIPTO", "BENEFICIARIO- CTI", "BENEFICIARIO"
         ]
-        df_merged_filtrado = df_merged[df_merged['N_ESTADO_FICHA'].isin(estados_relevantes)]
+        estados_cupo = ["INSCRIPTO - CTI", "INSCRIPTO", "BENEFICIARIO- CTI", "BENEFICIARIO"]
 
-        # Agrupar por empresa y estado, contando las fichas por estado (número de registros por empresa y estado)
-        df_fichas_por_estado = df_merged_filtrado.groupby(['N_EMPRESA', 'N_ESTADO_FICHA']).agg(
-            cantidad_fichas=('EMP_CUIT', 'nunique')  # Contamos los CUITs únicos (fichas) por empresa y estado
+        # Filtrar solo los estados relevantes
+        df_filtrado = df_merged[df_merged['N_ESTADO_FICHA'].isin(estados_relevantes)]
+
+        # Agrupar para contar fichas por estado y empresa
+        df_fichas_por_estado = df_filtrado.groupby(['N_EMPRESA', 'N_ESTADO_FICHA']).agg(
+            cantidad_fichas=('EMP_CUIT', 'nunique')  # CUITs únicos por estado y empresa
         ).reset_index()
 
-        # Unir con el df_empresas para obtener el cupo máximo de cada empresa
-        df_fichas_por_estado = pd.merge(df_fichas_por_estado, df_empresas[['N_EMPRESA', 'CUPO']], on='N_EMPRESA', how='left')
-
-        # Calcular el cupo total utilizado por cada empresa sumando las fichas por estado
-        df_fichas_por_empresa = df_fichas_por_estado.groupby('N_EMPRESA').agg(
-            total_fichas=('cantidad_fichas', 'sum'),  # Sumar todas las fichas por empresa
-            CUPO=('CUPO', 'first')  # Tomar el cupo máximo de cada empresa
+        # Calcular las fichas que afectan el cupo
+        df_fichas_cupo = df_filtrado[df_filtrado['N_ESTADO_FICHA'].isin(estados_cupo)].groupby('N_EMPRESA').agg(
+            fichas_afectan_cupo=('EMP_CUIT', 'nunique')  # CUITs únicos en estados relevantes
         ).reset_index()
 
-        # Calcular el cupo disponible
-        df_fichas_por_empresa['cupo_disponible'] = df_fichas_por_empresa['CUPO'] - df_fichas_por_empresa['total_fichas']
+        # Unir con los datos de cupo
+        df_cupo = pd.merge(df_fichas_cupo, df_empresas[['N_EMPRESA', 'CUPO']], on='N_EMPRESA', how='left')
 
-        # Ahora unimos el total de fichas por empresa con los estados y las fichas por estado
-        df_final = pd.merge(df_fichas_por_estado, df_fichas_por_empresa[['N_EMPRESA', 'cupo_disponible']], on='N_EMPRESA', how='left')
+        # Calcular el cupo disponible y evitar valores negativos
+        df_cupo['cupo_disponible'] = df_cupo['CUPO'] - df_cupo['fichas_afectan_cupo']
+        df_cupo['cupo_disponible'] = df_cupo['cupo_disponible'].clip(lower=0)
 
-        # Mostrar la tabla con las empresas, fichas por estado, y cupo disponible
-        st.write("Tabla con la cantidad de fichas por estado y cupo disponible por empresa:")
-        st.dataframe(df_final[['N_EMPRESA', 'N_ESTADO_FICHA', 'cantidad_fichas', 'CUPO', 'cupo_disponible']])
+        # Unir el cálculo del cupo con las fichas por estado
+        df_resultado = pd.merge(df_fichas_por_estado, df_cupo[['N_EMPRESA', 'CUPO', 'cupo_disponible']], on='N_EMPRESA', how='left')
+
+        # Consolidar la salida
+        df_resultado = df_resultado.drop_duplicates(subset=['N_EMPRESA', 'N_ESTADO_FICHA'])
+
+        # Mostrar la tabla final
+        st.write("Tabla con la cantidad de fichas por estado, cupo y cupo disponible por empresa:")
+        st.dataframe(df_resultado[['N_EMPRESA', 'N_ESTADO_FICHA', 'cantidad_fichas', 'CUPO', 'cupo_disponible']])
+
+
+
+
+
+
+
+
+
