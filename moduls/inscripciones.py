@@ -56,6 +56,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
 
     # Agregar información a la pestaña inscripciones
     st.info("⭐ Se agrego una nueva pestaña para el analisis relacional entre puestos ofrecidos y demandados.")
+    st.info("⭐ NUEVO reporte de PERFIL de demanda de empresas adheridas al PPP")
     st.info("⭐ Se agregó la métrica de cantidad de cti-ppp.")
 
 
@@ -71,6 +72,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     total_postulantes_ppp = df_postulaciones_fup['CUIL'].nunique()
     total_match_ppp = df_match_ppp['CUIL'].shape[0]
     total_match_ppp_unicos = df_match_ppp['CUIL'].nunique()
+    total_empresas_match_ppp = df_match_ppp['ID_EMP'].nunique()
 
     
 #Columnas con tarjetas de información
@@ -93,7 +95,8 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             f"""
             <div style="background-color:#d6efd6;padding:10px;border-radius:5px;">
                 <strong>Total Match PPP</strong><br>
-                <span style="font-size:24px;">{total_match_ppp}</span>
+                <span style="font-size:24px;">{total_match_ppp}</span></br>
+                <span style="font-size:12px;">EMPRESAS UNICAS {total_empresas_match_ppp}</span>
             </div>
             """, 
             unsafe_allow_html=True

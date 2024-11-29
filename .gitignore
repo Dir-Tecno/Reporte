@@ -2,4 +2,5 @@
 moduls/__pycache__
 venv/
 run_streamlit.sh
-entornobanco/
+.vscode
+.devcontainer
