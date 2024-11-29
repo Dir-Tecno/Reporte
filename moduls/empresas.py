@@ -53,7 +53,7 @@ def show_companies(df_empresas):
     df_empresas['CUPO'] = df_empresas.apply(lambda row: calculate_cupo(row['CANTIDAD_EMPLEADOS'], row['EMPLEADOR'], row['ADHERIDO']), axis=1)
 
     # Filtrar por CUIT único y eliminar duplicados
-    df_display = df_empresas[['N_LOCALIDAD','N_DEPARTAMENTO', 'CUIT', 'N_EMPRESA', 'NOMBRE_TIPO_EMPRESA','ADHERIDO','CANTIDAD_EMPLEADOS', 'VACANTES', 'CUPO', 'IMP GANANCIAS', 'IMP IVA', 'MONOTRIBUTO', 'INTEGRANTE', 'EMPLEADOR', 'ACTIVIDAD MONOTRIBUTO']].drop_duplicates(subset='CUIT')
+    df_display = df_empresas[['N_LOCALIDAD','N_DEPARTAMENTO', 'CUIT', 'N_EMPRESA', 'NOMBRE_TIPO_EMPRESA','N_CATEGORIA_EMPLEO','ADHERIDO','CANTIDAD_EMPLEADOS', 'VACANTES', 'CUPO', 'IMP GANANCIAS', 'IMP IVA', 'MONOTRIBUTO', 'INTEGRANTE', 'EMPLEADOR', 'ACTIVIDAD MONOTRIBUTO']].drop_duplicates(subset='CUIT')
     df_display = df_display.sort_values(by='CUPO', ascending=False).reset_index(drop=True)
 
     # Asegúrate de que las columnas relevantes sean numéricas
@@ -97,12 +97,12 @@ def show_companies(df_empresas):
         with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
             df_empresas_puestos.to_excel(writer, sheet_name='Empresas_Puestos', index=False)
         
-        st.download_button(
-            label="📥 Descargar Perfiles de Empresas PPP",
-            data=buffer.getvalue(),
-            file_name="empresas_puestos.xlsx",
-            mime="application/vnd.ms-excel"
-        )
+        #st.download_button(
+        #    label="📥 Descargar Perfiles de Empresas PPP",
+        #    data=buffer.getvalue(),
+        #    file_name="empresas_puestos.xlsx",
+        #    mime="application/vnd.ms-excel"
+        #)
         # Agrupación para gráfico de barras apiladas
         df_puesto_agg = df_empresas_puestos.groupby(['N_CATEGORIA_EMPLEO', 'NOMBRE_TIPO_EMPRESA']).agg({'CUIT': 'nunique'}).reset_index()
         top_10_categorias = df_puesto_agg.groupby('N_CATEGORIA_EMPLEO')['CUIT'].nunique().nlargest(10).index
