@@ -2,7 +2,7 @@ import streamlit as st
 from moduls.carga import load_data_from_bucket
 from moduls.inscripciones import show_inscriptions
 from moduls.empresas import show_companies
-#from moduls.respuestas import show_responses
+from moduls.puestos import show_puestos
 
 
 # Configuración de las credenciales
