@@ -93,9 +93,9 @@ def show_companies(df_empresas):
         #CUPO
 
         # Botón para descargar el DataFrame como Excel
-        buffer = io.BytesIO()
-        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-            df_empresas_puestos.to_excel(writer, sheet_name='Empresas_Puestos', index=False)
+        #buffer = io.BytesIO()
+        #with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        #    df_empresas_puestos.to_excel(writer, sheet_name='Empresas_Puestos', index=False)
         
         #st.download_button(
         #    label="📥 Descargar Perfiles de Empresas PPP",
