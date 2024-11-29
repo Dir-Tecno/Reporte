@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-def show_puestos(df_puestos, df_empresas,df_inscriptos):
-    
+def show_puestos(df_puestos, df_empresas, df_inscriptos):
     # Verificar si df_puestos no está vacío
     if not df_puestos.empty:
         st.subheader("Distribución de Categorías de Empleo por Estado de Ficha")
@@ -51,7 +50,14 @@ def show_puestos(df_puestos, df_empresas,df_inscriptos):
 
             st.altair_chart(chart_estado, use_container_width=True)
 
-  
+    # Separador visual con CSS
+    st.markdown(
+        """
+        <div style="border-top: 2px solid #4CAF50; margin: 20px 0;"></div>
+        """,
+        unsafe_allow_html=True
+    )
+
     # Verificar si df_empresas y df_inscriptos no están vacíos
     if not df_empresas.empty and not df_inscriptos.empty:
         st.subheader("Tabla de Empresas con Fichas por Estado y Cupo Disponible")
@@ -73,14 +79,14 @@ def show_puestos(df_puestos, df_empresas,df_inscriptos):
         # Filtrar solo los estados relevantes
         df_filtrado = df_merged[df_merged['N_ESTADO_FICHA'].isin(estados_relevantes)]
 
-        # Agrupar para contar fichas por estado y empresa
+        # Agrupar para contar fichas por estado y empresa (total fichas, no únicos)
         df_fichas_por_estado = df_filtrado.groupby(['N_EMPRESA', 'N_ESTADO_FICHA']).agg(
-            cantidad_fichas=('EMP_CUIT', 'nunique')  # CUITs únicos por estado y empresa
+            cantidad_fichas=('EMP_CUIT', 'count')  # Total de fichas por estado y empresa
         ).reset_index()
 
-        # Calcular las fichas que afectan el cupo
+        # Calcular las fichas que afectan el cupo (solo los estados que afectan el cupo)
         df_fichas_cupo = df_filtrado[df_filtrado['N_ESTADO_FICHA'].isin(estados_cupo)].groupby('N_EMPRESA').agg(
-            fichas_afectan_cupo=('EMP_CUIT', 'nunique')  # CUITs únicos en estados relevantes
+            fichas_afectan_cupo=('EMP_CUIT', 'count')  # Total de fichas que afectan el cupo
         ).reset_index()
 
         # Unir con los datos de cupo
@@ -97,14 +103,4 @@ def show_puestos(df_puestos, df_empresas,df_inscriptos):
         df_resultado = df_resultado.drop_duplicates(subset=['N_EMPRESA', 'N_ESTADO_FICHA'])
 
         # Mostrar la tabla final
-        st.write("Tabla con la cantidad de fichas por estado, cupo y cupo disponible por empresa:")
-        st.dataframe(df_resultado[['N_EMPRESA', 'N_ESTADO_FICHA', 'cantidad_fichas', 'CUPO', 'cupo_disponible']])
-
-
-
-
-
-
-
-
-
+        st.dataframe(df_resultado)
