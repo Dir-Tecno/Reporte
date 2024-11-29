@@ -168,9 +168,3 @@ def show_companies(df_empresas):
     })
 
     st.dataframe(df_display, hide_index=True)
-
-
-
-
-
-   

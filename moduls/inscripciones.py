@@ -6,8 +6,7 @@ from datetime import timedelta
 import io
 import pydeck as pdk
 import plotly.express as px
-import requests  # Añadir al inicio del archivo
-
+import requests 
 
 
 def enviar_a_slack(comentario, valoracion):
@@ -55,10 +54,9 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_cti_benficiario_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 14]
 
     # Agregar información a la pestaña inscripciones
-    st.info("⭐ Se agrego una nueva pestaña para el analisis relacional entre puestos ofrecidos y demandados.")
     st.info("⭐ NUEVO reporte de PERFIL de demanda de empresas adheridas al PPP")
     st.info("⭐ Se agregó la métrica de cantidad de cti-ppp.")
-
+    
 
 
 
@@ -488,8 +486,3 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             help="Descarga el reporte completo de PPP y Empleo+26 en formato Excel"
         )
-
-
-    
-
-

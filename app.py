@@ -2,11 +2,7 @@ import streamlit as st
 from moduls.carga import load_data_from_bucket
 from moduls.inscripciones import show_inscriptions
 from moduls.empresas import show_companies
-<<<<<<< HEAD
-#from moduls.puestos import show_puestos
-=======
-from moduls.puestos import show_puestos
->>>>>>> reporteministerio
+#from moduls.respuestas import show_responses
 
 
 # Configuración de las credenciales
@@ -29,13 +25,11 @@ tab1, tab2 = st.tabs(["Inscripciones", "Empresas"])
 
 with tab1:
     # Mostrar inscripciones
-    show_inscriptions(dfs[3], dfs[4], dfs[6], dfs[1], file_dates[2],dfs[0])
+    show_inscriptions(dfs[3], dfs[4], dfs[6], dfs[1],dfs[0])
 
 with tab2:
     # Mostrar empresas
-    show_companies(dfs[2])
-
-# Mostrar puestos
+    show_companies(dfs[2], file_dates[2])
 
 
 
