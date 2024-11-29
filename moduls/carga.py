@@ -48,4 +48,10 @@ def load_data_from_bucket(bucket_name, supabase_url, supabase_key):
             df = pd.read_csv(BytesIO(response))
             dfs.append(df)
             file_dates.append(creation_date)
+        
+        #provisorio antes de que sea parquet para que se saque de global
+        elif file['name'].endswith('.txt'):
+            df = pd.read_csv(BytesIO(response))
+            dfs.append(df)
+            file_dates.append(creation_date)
     return dfs, file_dates
