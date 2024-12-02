@@ -14,7 +14,7 @@ st.set_page_config(page_title="Reporte Empleo +26", layout="wide")
 # Nombres de los archivos en el bucket
 url = st.secrets['supabase']['url']
 key = st.secrets['supabase']['key']
-bucket_name = "empleo"
+bucket_name = "Empleo"
 
 # Cargar datos desde el bucket
 dfs, file_dates = load_data_from_bucket(bucket_name, url, key)
@@ -29,6 +29,6 @@ with tab1:
 
 with tab2:
     # Mostrar empresas
-    show_companies(dfs[2])
+    show_companies(dfs[2],dfs[0])
 
 
