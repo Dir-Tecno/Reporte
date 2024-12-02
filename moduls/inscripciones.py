@@ -55,8 +55,9 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_cti_benficiario_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 14]
 
     # Agregar información a la pestaña inscripciones
+    st.info("⭐ Se agregó un boton desplegable  para ver puestos ofrecidos  por empresas y su ubicación.")
     st.info("⭐ NUEVO reporte de PERFIL de demanda de empresas adheridas al PPP")
-    st.info("⭐ Se agregó la métrica de cantidad de cti-ppp.")
+
     
 
 
