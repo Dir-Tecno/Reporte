@@ -72,13 +72,15 @@ def show_companies(df_empresas,geojson_data):
     if not df_empresas_puestos.empty:
         st.markdown("### Programa Primer Paso - PERFIL de la demanda por categorías")
 
-        # Añadir un filtro por N_DEPARTAMENTO
-        departamentos_unicos = df_empresas_puestos['N_DEPARTAMENTO'].unique()
-        departamentos_seleccionados = st.multiselect(
-            'Selecciona los departamentos:',
-            options=departamentos_unicos,
-            default=departamentos_unicos.tolist()  # Por defecto, selecciona todos
-        )
+        # Añadir un expander para el filtro por N_DEPARTAMENTO
+        with st.expander("Selecciona los departamentos (haz clic para expandir)"):
+            departamentos_unicos = df_empresas_puestos['N_DEPARTAMENTO'].unique()
+            departamentos_seleccionados = st.multiselect(
+                label='',
+                options=departamentos_unicos,
+                default=departamentos_unicos.tolist(),  # Por defecto, selecciona todos
+                help='Mantén presionada la tecla Ctrl (o Cmd en Mac) para seleccionar múltiples opciones.'
+            )
 
         # Filtrar df_empresas_puestos según los departamentos seleccionados
         df_empresas_puestos = df_empresas_puestos[df_empresas_puestos['N_DEPARTAMENTO'].isin(departamentos_seleccionados)]
