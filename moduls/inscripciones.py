@@ -55,12 +55,8 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_cti_benficiario_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 14]
 
     # Agregar información a la pestaña inscripciones
-    st.info("⭐ Se agregó un boton desplegable  para ver puestos ofrecidos  por empresas y su ubicación.")
-    st.info("⭐ NUEVO reporte de PERFIL de demanda de empresas adheridas al PPP")
-
-    
-
-
+    st.info ("⭐NUEVO: Se han agregado los porcentajes de modalidad para CTI's")
+    st.info("⭐NUEVO: Se ha agregado el gráfico de torta sobre la distribución de postulantes según nivel educativo")
 
     # REPORTE PPP
     st.markdown("### Programa Primer Paso")
@@ -74,7 +70,33 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     total_match_ppp_unicos = df_match_ppp['CUIL'].nunique()
     total_empresas_match_ppp = df_match_ppp['ID_EMP'].nunique()
 
-    
+
+
+    # Validar que las columnas necesarias existan
+    if 'ID_MOD_CONT_AFIP' in df_inscriptos_ppp.columns:
+        # Asegurarse de que los valores no sean nulos
+        df_inscriptos_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_MOD_CONT_AFIP'].notna()]
+
+        # Contar registros "Completo" y "Parcial"
+        completo_count = df_inscriptos_ppp[df_inscriptos_ppp['ID_MOD_CONT_AFIP'] == 8].shape[0]
+        parcial_count = df_inscriptos_ppp[df_inscriptos_ppp['ID_MOD_CONT_AFIP'] == 1].shape[0]
+
+        # Contar el total de registros
+        mod_afip = df_inscriptos_ppp.shape[0]
+
+        # Calcular porcentajes si hay registros
+        if mod_afip > 0:
+            porcentaje_completo = (completo_count / mod_afip) * 100
+            porcentaje_parcial = (parcial_count / mod_afip) * 100
+        else:
+            porcentaje_completo = 0
+            porcentaje_parcial = 0
+    else:
+        # Valores predeterminados si no existen las columnas necesarias
+        porcentaje_completo = 0
+        porcentaje_parcial = 0
+
+
 #Columnas con tarjetas de información
     
     col1, col2, col3  = st.columns(3)
@@ -126,16 +148,23 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             """, 
             unsafe_allow_html=True
         )
-    with col2:
-        st.markdown(
+        with col2:
+            st.markdown(
             f"""
             <div style="background-color:#d0e3f1;padding:10px;border-radius:5px;">
                 <strong>CTI Validados PPP</strong><br>
-                <span style="font-size:24px;">{df_cti_validos_ppp['CUIL'].nunique()}</span>
+                <span style="font-size:24px;">{df_cti_validos_ppp['CUIL'].nunique()}</span><br>
+                <div style="margin-top:10px;">
+                    <strong>Modalidad Completo:</strong>
+                    <span style="font-size:18px;color:green;">{porcentaje_completo:.2f}%</span><br>
+                    <strong>Modalidad Parcial:</strong>
+                    <span style="font-size:18px;color:yellow;">{porcentaje_parcial:.2f}%</span>
+                </div>
             </div>
             """, 
             unsafe_allow_html=True
         )
+
     with col3:
         st.markdown(
             f"""
@@ -148,27 +177,63 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         )
 
 
-    # Gráfico de torta con la edad
-    df_postulaciones_fup['FEC_NACIMIENTO'] = pd.to_datetime(df_postulaciones_fup['FEC_NACIMIENTO'], errors='coerce')
-    
-    # Asegurarse de que no haya valores NaT antes de calcular la edad
-    df_postulaciones_fup = df_postulaciones_fup.dropna(subset=['FEC_NACIMIENTO'])
-    
-    # Verificar si hay valores NaT después de la conversión
-    if df_postulaciones_fup['FEC_NACIMIENTO'].isnull().any():
-        st.warning("Hay valores nulos en la columna FEC_NACIMIENTO después de la conversión.")
-        return  # Salir de la función si hay valores nulos
+    # Crear las dos columnas
+    col1, col2 = st.columns(2)
 
-    df_postulaciones_fup['Edad'] = (pd.Timestamp(datetime.now()) - df_postulaciones_fup['FEC_NACIMIENTO']).dt.days // 365
-    
-    # Filtrar mayores de 25 años
-    edad_counts = df_postulaciones_fup[df_postulaciones_fup['Edad'] <= 25]['Edad'].value_counts().reset_index()
-    edad_counts.columns = ['Edad', 'Count']  # Renombrar columnas para el gráfico
+   # Gráfico de torta con la edad (col1)
+    with col1:
+        df_postulaciones_fup['FEC_NACIMIENTO'] = pd.to_datetime(df_postulaciones_fup['FEC_NACIMIENTO'], errors='coerce')
         
-    # Agregar tooltips al gráfico de torta
-    fig = px.pie(edad_counts, values='Count', names='Edad', title='Distribución de Edades', 
-                 hover_data=['Count'], labels={'Edad': 'Edad'})
-    st.plotly_chart(fig)
+        # Asegurarse de que no haya valores NaT antes de calcular la edad
+        df_postulaciones_fup = df_postulaciones_fup.dropna(subset=['FEC_NACIMIENTO'])
+        
+        # Filtrar CUIL únicos
+        df_postulaciones_fup_unicos = df_postulaciones_fup.drop_duplicates(subset=['CUIL'])
+        
+        # Verificar si hay valores NaT después de la conversión
+        if df_postulaciones_fup_unicos['FEC_NACIMIENTO'].isnull().any():
+            st.warning("Hay valores nulos en la columna FEC_NACIMIENTO después de la conversión.")
+        else:
+            df_postulaciones_fup_unicos['Edad'] = (pd.Timestamp(datetime.now()) - df_postulaciones_fup_unicos['FEC_NACIMIENTO']).dt.days // 365
+            
+            # Filtrar menores o iguales a 25 años
+            edad_counts = df_postulaciones_fup_unicos[df_postulaciones_fup_unicos['Edad'] <= 25]['Edad'].value_counts().reset_index()
+            edad_counts.columns = ['Edad', 'Count']  # Renombrar columnas para el gráfico
+                
+            # Agregar tooltips al gráfico de torta
+            fig = px.pie(edad_counts, values='Count', names='Edad', title='Distribución de Edades', 
+                        hover_data=['Count'], labels={'Edad': 'Edad'})
+            st.plotly_chart(fig)
+
+    # Gráfico de torta con la educación (col2)
+    with col2:
+        # Asegúrate de que la columna EDUCACION no tenga valores nulos
+        df_validos_educacion = df_postulaciones_fup.dropna(subset=['EDUCACION']) if 'EDUCACION' in df_postulaciones_fup.columns else pd.DataFrame()
+
+        # Filtrar CUIL únicos
+        df_validos_educacion_unicos = df_validos_educacion.drop_duplicates(subset=['CUIL'])
+
+        # Contar los valores únicos en la columna 'EDUCACION'
+        educacion_counts = df_validos_educacion_unicos['EDUCACION'].value_counts().reset_index()
+        educacion_counts.columns = ['Educacion', 'Count']  # Renombrar columnas para el gráfico
+
+        # Crear gráfico de torta con valores de 'EDUCACION'
+        fig = px.pie(educacion_counts, values='Count', names='Educacion', title='Distribución de Educación', 
+                    hover_data=['Count'], labels={'Educacion': 'Nivel Educativo'})
+
+        # Mostrar el gráfico en Streamlit
+        st.plotly_chart(fig)
+
+    # Filtrar el DataFrame con solo los campos necesarios
+    df_filtrado_torta = df_postulaciones_fup_unicos[['CUIL', 'Edad', 'EDUCACION']]
+
+    # Agregar botón de descarga para el DataFrame filtrado
+    st.download_button(
+        label="Descargar Datos de Postulantes",
+        data=df_filtrado_torta.to_csv(index=False),  # Convertir a CSV
+        file_name='datos_POSTULANTES.csv',  # Nombre del archivo
+        mime='text/csv'  # Tipo MIME para CSV
+    )
 
     ##### PPP POR DEPARTAMENTEO ##########
 
@@ -259,8 +324,6 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         mime='text/csv'
     )
 
-    
-    
     ########### EMPLEO +26 ##############
     
     # Convertir las fechas en inscripciones
@@ -307,7 +370,17 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     total_tareas = df_benef['TAREAS'].notna() & df_benef['TAREAS'].str.strip().ne('')
     total_tareas_count = total_tareas.sum()
 
+    # Filtrar registros no nulos (si la columna no existe, no habrá filas en df_validos)
+    df_validos_26 = df_inscriptos_26.dropna(subset=['ID_MOD_CONT_AFIP']) if 'ID_MOD_CONT_AFIP' in df_inscriptos_ppp.columns else pd.DataFrame()
 
+    # Contar registros y calcular porcentajes
+    mod_afip_26 = len(df_validos_26)
+    completo_count = (df_validos_26['ID_MOD_CONT_AFIP'] == 8).sum() if mod_afip_26 > 0 else 0
+    parcial_count = (df_validos_26['ID_MOD_CONT_AFIP'] == 1).sum() if mod_afip_26 > 0 else 0
+
+    # Calcular porcentajes
+    porcentaje_completo_26 = (completo_count / mod_afip_26) * 100 if mod_afip_26 > 0 else 0
+    porcentaje_parcial_26 = (parcial_count / mod_afip_26) * 100 if mod_afip_26 > 0 else 0
 
 
     # Pestaña inscripciones
@@ -383,7 +456,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             <div style="background-color:rgb(255 209 209);padding:10px;border-radius:5px;">
                 <strong>CTI INSCR.</strong><br>
                 <span style="font-size:24px;">{total_cti}</span>
-            </div>
+              </div>
             """, 
             unsafe_allow_html=True
         )
@@ -393,6 +466,11 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             <div style="background-color:rgb(173, 216, 230);padding:10px;border-radius:5px;">
                 <strong>CTI VALIDADOS</strong><br>
                 <span style="font-size:24px;">{total_cti_benef}</span>
+               <div style="margin-top:10px;">
+                    <strong>Modalidad Completo:</strong>
+                    <span style="font-size:18px;color:green;">{porcentaje_completo_26:.2f}%</span><br>
+                    <strong>Modalidad Parcial:</strong>
+                    <span style="font-size:18px;color:yellow;">{porcentaje_parcial_26:.2f}%</span>
             </div>
             """, 
             unsafe_allow_html=True
@@ -488,8 +566,3 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             help="Descarga el reporte completo de PPP y Empleo+26 en formato Excel"
         )
-
-
-    
-
-
