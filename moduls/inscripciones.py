@@ -188,16 +188,20 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         df_postulaciones_fup = df_postulaciones_fup.dropna(subset=['FEC_NACIMIENTO'])
         
         # Filtrar CUIL únicos
-        df_postulaciones_fup_unicos = df_postulaciones_fup.drop_duplicates(subset=['CUIL'])
+        df_postulaciones_fup_unicos = df_postulaciones_fup.drop_duplicates(subset=['CUIL']).copy()  # Asegúrate de hacer una copia
         
         # Verificar si hay valores NaT después de la conversión
         if df_postulaciones_fup_unicos['FEC_NACIMIENTO'].isnull().any():
             st.warning("Hay valores nulos en la columna FEC_NACIMIENTO después de la conversión.")
         else:
-            df_postulaciones_fup_unicos['Edad'] = (pd.Timestamp(datetime.now()) - df_postulaciones_fup_unicos['FEC_NACIMIENTO']).dt.days // 365
+            df_postulaciones_fup_unicos.loc[:, 'Edad'] = (pd.Timestamp(datetime.now()) - df_postulaciones_fup_unicos['FEC_NACIMIENTO']).dt.days // 365
             
-            # Filtrar menores o iguales a 25 años
-            edad_counts = df_postulaciones_fup_unicos[df_postulaciones_fup_unicos['Edad'] <= 25]['Edad'].value_counts().reset_index()
+            # Filtrar menores o iguales a 25 años y quitar edad 15
+            edad_filtrada = df_postulaciones_fup_unicos[(df_postulaciones_fup_unicos['Edad'] <= 25) & 
+                                                        (df_postulaciones_fup_unicos['Edad'] != 15)]
+            
+            # Contar edades
+            edad_counts = edad_filtrada['Edad'].value_counts().reset_index()
             edad_counts.columns = ['Edad', 'Count']  # Renombrar columnas para el gráfico
                 
             # Agregar tooltips al gráfico de torta
@@ -210,6 +214,9 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         # Asegúrate de que la columna EDUCACION no tenga valores nulos
         df_validos_educacion = df_postulaciones_fup.dropna(subset=['EDUCACION']) if 'EDUCACION' in df_postulaciones_fup.columns else pd.DataFrame()
 
+         # Filtrar valores
+        df_validos_educacion = df_validos_educacion[~df_validos_educacion['EDUCACION'].isin(['SIN DESCRIPCION', 'PRE-ESCOLAR'])]
+        
         # Filtrar CUIL únicos
         df_validos_educacion_unicos = df_validos_educacion.drop_duplicates(subset=['CUIL'])
 
@@ -410,9 +417,6 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
                 st.sidebar.error("❌ Hubo un error al enviar el mensaje a Slack.")
         else:
             st.sidebar.warning("⚠️ Por favor, escribe un comentario antes de enviar.")
-
-
-
 
     # Calcular edades en inscripciones
     fecha_actual = pd.Timestamp(datetime.now())
