@@ -55,8 +55,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_cti_benficiario_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 14]
 
     # Agregar información a la pestaña inscripciones
-    st.info ("⭐NUEVO: Se han agregado los porcentajes de modalidad para CTI's")
-    st.info("⭐NUEVO: Se ha agregado el gráfico de torta sobre la distribución de postulantes según nivel educativo")
+    st.info ("⭐FIN DE INSCRIPCION PPP: Tanto FUP como Matchs quedaron con inscripciones cerradas")
 
     # REPORTE PPP
     st.markdown("### Programa Primer Paso")
