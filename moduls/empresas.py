@@ -57,7 +57,7 @@ def show_companies(df_empresas,geojson_data):
     df_empresas['CUPO'] = df_empresas.apply(lambda row: calculate_cupo(row['CANTIDAD_EMPLEADOS'], row['EMPLEADOR'], row['ADHERIDO']), axis=1)
 
     # Filtrar por CUIT único y eliminar duplicados
-    df_display = df_empresas[['N_LOCALIDAD','N_DEPARTAMENTO', 'CUIT', 'N_EMPRESA', 'NOMBRE_TIPO_EMPRESA','N_CATEGORIA_EMPLEO','ADHERIDO','CANTIDAD_EMPLEADOS', 'VACANTES', 'CUPO', 'IMP GANANCIAS', 'IMP IVA', 'MONOTRIBUTO', 'INTEGRANTE', 'EMPLEADOR', 'ACTIVIDAD MONOTRIBUTO']].drop_duplicates(subset='CUIT')
+    df_display = df_empresas[['N_LOCALIDAD','N_DEPARTAMENTO', 'CUIT', 'N_EMPRESA', 'NOMBRE_TIPO_EMPRESA','N_CATEGORIA_EMPLEO','ADHERIDO','CANTIDAD_EMPLEADOS', 'VACANTES', 'CUPO']].drop_duplicates(subset='CUIT')
     df_display = df_display.sort_values(by='CUPO', ascending=False).reset_index(drop=True)
 
     # Asegúrate de que las columnas relevantes sean numéricas
@@ -68,6 +68,7 @@ def show_companies(df_empresas,geojson_data):
     # Filtrar empresas adheridas al PPP 2024
     df_empresas_puestos = df_empresas[df_empresas['ADHERIDO'] == 'PPP - PROGRAMA PRIMER PASO [2024]'].copy()
 
+    
     # Resto del código de visualización
     if not df_empresas_puestos.empty:
         st.markdown("### Programa Primer Paso - PERFIL de la demanda por categorías")
