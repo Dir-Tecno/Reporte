@@ -60,13 +60,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     # Agregar información a la pestaña inscripciones
     st.info("⭐FIN DE INSCRIPCION PPP: Tanto FUP como Matchs quedaron con inscripciones cerradas")
 
-    # REPORTE PPP
-    st.markdown("### Programa Primer Paso")
-    
-    # Mostrar la fecha actualizada solo una vez
-    file_date_inscripciones = pd.to_datetime(file_date)
-    file_date_inscripciones = file_date_inscripciones - timedelta(hours=3)
-    st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
+
 
     # Sidebar para descarga de datos y feedback
     with st.sidebar:
