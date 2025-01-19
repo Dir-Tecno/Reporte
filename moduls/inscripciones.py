@@ -1,53 +1,56 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from datetime import datetime
-from datetime import timedelta 
+from datetime import datetime, timedelta 
 import io
 import pydeck as pdk
 import plotly.express as px
-import requests  # Añadir al inicio del archivo
-
-
+import requests
 
 def enviar_a_slack(comentario, valoracion):
-    # Obtener el webhook URL desde secrets
-    SLACK_WEBHOOK_URL = st.secrets["slack"]["webhook_url"]
-    
-    mensaje = {
-        "blocks": [
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": "📝 Nuevo Comentario Recibido"
-                }
-            },
-            {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Comentario:*\n{comentario}"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Valoración:*\n{'⭐' * valoracion}"
-                    }
-                ]
-            }
-        ]
-    }
-    
+    """
+    Envía el feedback a Slack usando un webhook.
+    """
     try:
+        SLACK_WEBHOOK_URL = st.secrets["slack"]["webhook_url"]
+        mensaje = {
+            "blocks": [
+                {
+                    "type": "header",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "📊 Nuevo Feedback del Dashboard",
+                        "emoji": True
+                    }
+                },
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Comentario:*\n{comentario}"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Valoración:*\n{'⭐' * valoracion}"
+                        }
+                    ]
+                }
+            ]
+        }
         response = requests.post(SLACK_WEBHOOK_URL, json=mensaje)
         return response.status_code == 200
     except Exception as e:
         st.error(f"Error al enviar a Slack: {str(e)}")
         return False
 
-def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_poblacion, file_date_inscripciones, geojson_data):
-    
+def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_poblacion, geojson_data, file_date):
+    # Verificar que los DataFrames no estén vacíos
+    if df_postulaciones_fup.empty or df_inscripciones.empty or df_inscriptos.empty or df_poblacion.empty:
+        st.error("Uno o más DataFrames están vacíos. Verifica la carga de datos.")
+        return
+
+    # Filtrar los DataFrames según sea necesario
     df_inscriptos_ppp = df_inscriptos[df_inscriptos['IDETAPA'] == 53]
     df_match_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 8]
     df_cti_inscripto_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 12]
@@ -55,12 +58,70 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_cti_benficiario_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 14]
 
     # Agregar información a la pestaña inscripciones
-    st.info ("⭐FIN DE INSCRIPCION PPP: Tanto FUP como Matchs quedaron con inscripciones cerradas")
+    st.info("⭐FIN DE INSCRIPCION PPP: Tanto FUP como Matchs quedaron con inscripciones cerradas")
+
+
+
+    # Sidebar para descarga de datos y feedback
+    with st.sidebar:
+        st.header("📝 Buzón de Mensajes")
+        st.caption("Dirección de Tecnología y Análisis de Datos")
+
+        # Área de texto para comentarios
+        comentario = st.text_area("Para poder ofrecerte los mejores reportes posibles, tu opinión es muy valiosa. Nos encantaría recibir tus comentarios sobre el reporte y saber en qué aspectos podemos mejorarlo. ¡Muchas gracias por ayudarnos a crecer y mejorar!", "", height=100)
+
+        # Selector de valoración
+        valoracion = st.selectbox("Valora el reporte:", [1, 2, 3, 4, 5])
+
+        # Botón para enviar el mensaje
+        if st.button("Enviar"):
+            if comentario:
+                # Intentar enviar a Slack
+                if enviar_a_slack(comentario, valoracion):
+                    st.success("✅ Gracias por tu comentario! El mensaje ha sido enviado.")
+                    st.write(f"**Comentario:** {comentario}")
+                    st.write(f"**Valoración:** {valoracion} estrellas")
+                else:
+                    st.error("❌ Hubo un error al enviar el mensaje a Slack.")
+            else:
+                st.warning("⚠️ Por favor, escribe un comentario antes de enviar.")
+
+        # Título de la sección de descarga
+        st.markdown("### 📥 Descarga de Bases")
+
+        # Preparar el DataFrame para la descarga
+        col_inscripcion = ['ID_FICHA', 'APELLIDO', 'NOMBRE', 'CUIL', 'N_ESTADO_FICHA', 'IDETAPA', 
+                           'NUMERO_DOCUMENTO', 'FER_NAC', 'EDAD', 'SEXO', 'FEC_SIST', 'CALLE', 
+                           'NUMERO', 'BARRIO', 'N_LOCALIDAD', 'N_DEPARTAMENTO', 'TEL_FIJO', 
+                           'TEL_CELULAR', 'CONTACTO', 'MAIL', 'ES_DISCAPACITADO', 'CERTIF_DISCAP', 
+                           'FEC_SIST', 'MODALIDAD', 'TAREAS', 'ALTA_TEMPRANA', 'ID_MOD_CONT_AFIP', 
+                           'MOD_CONT_AFIP', 'FEC_MODIF', 'RAZON_SOCIAL', 'EMP_CUIT', 'CANT_EMP', 
+                           'EMP_CALLE', 'EMP_NUMERO', 'EMP_N_LOCALIDAD', 'EMP_N_DEPARTAMENTO', 
+                           'EMP_CELULAR', 'EMP_MAIL', 'EMP_ES_COOPERATIVA', 'EU_NOMBRE', 
+                           'EMP_APELLIDO', 'EU_MAIL', 'EU_TELEFONO']
+
+        # Filtrar df_inscriptos por los estados de ficha requeridos antes de seleccionar las columnas
+        estados_validos = [8, 3, 12, 13, 14]
+        df_i = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin(estados_validos)][col_inscripcion]
+        
+        # Preparar el buffer para el archivo Excel
+        buffer2 = io.BytesIO()
+        with pd.ExcelWriter(buffer2, engine='openpyxl') as writer:
+            df_i.to_excel(writer, index=False, sheet_name='Union PPP y Empleo+26')
+        buffer2.seek(0)
+
+        # Botón de descarga con estilo
+        st.download_button(
+            label="📊 Descargar PPP y Empleo+26",
+            data=buffer2,
+            file_name='reporte_ppp_empleo26.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            help="Descarga el reporte completo de PPP y Empleo+26 en formato Excel"
+        )
 
     # REPORTE PPP
     st.markdown("### Programa Primer Paso")
-    file_date_inscripciones = pd.to_datetime(file_date_inscripciones)  # Convertir el string a fecha
-    # Restar 3 horas a la fecha
+    file_date_inscripciones = pd.to_datetime(file_date)
     file_date_inscripciones = file_date_inscripciones - timedelta(hours=3)
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
@@ -270,7 +331,8 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     with col1:
         st.subheader("Tabla de Postulaciones")
         st.dataframe(departamento_counts_sorted, hide_index=True)
-
+    
+    """"
     # Corregir el nombre del departamento en df_poblacion
     df_poblacion['NOMDEPTO'] = df_poblacion['NOMDEPTO'].replace('PRESIDENTE ROQUE SAENZ PENA', 'PRESIDENTE ROQUE SAENZ PENA')
 
@@ -284,51 +346,40 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     if 'NOMDEPTO' in df_poblacion.columns:
         df_poblacion['INSCRIPTOS'] = df_poblacion['NOMDEPTO'].map(inscriptos_por_depto.set_index('N_DEPARTAMENTO')['Cuenta']).fillna(0).astype(int)
 
+    # Comentar temporalmente la sección del mapa
+    
     # Crear el mapa
-    st.subheader("Distribucion de postulaciones por Departamento")
-    ig = px.choropleth_mapbox(
-        df_poblacion,
-        geojson=geojson_data,
-        locations='NOMDEPTO',
-        featureidkey='properties.NOMDEPTO',
-        color='INSCRIPTOS',
-        mapbox_style="carto-positron",
-        zoom=4,
-        center={"lat": -31.416, "lon": -64.183},
-        opacity=0.5,
-        labels={'INSCRIPTOS': 'Número de Inscriptos'},
-        hover_data={'NOMDEPTO': True, 'INSCRIPTOS': True},  
-    )
+    if not df_dept_specific.empty:
+        st.markdown("### Mapa de Inscriptos por Departamento")
+        
+        # Preparar datos para el mapa
+        df_map = df_dept_specific.groupby('N_DEPARTAMENTO').size().reset_index(name='count')
+        
+        fig = px.choropleth_mapbox(
+            df_map,
+            geojson=geojson_data,
+            locations='N_DEPARTAMENTO',
+            featureidkey='properties.NOMDEPTO',
+            color='count',
+            mapbox_style="carto-positron",
+            zoom=5,
+            center={"lat": -31.416, "lon": -64.183},
+            opacity=0.6,
+            hover_name='N_DEPARTAMENTO',
+            color_continuous_scale="Viridis"
+        )
 
-    # Actualizar la geometría
-    ig.update_geos(fitbounds="locations", visible=False)
+        fig.update_layout(
+            margin={"r":0,"t":0,"l":0,"b":0},
+            mapbox=dict(
+                bearing=0,
+                pitch=0
+            )
+        )
 
-    # Mejorar el layout para asegurar que el gráfico ocupe todo el espacio disponible
-    ig.update_layout(
-    title="Distribución de postulaciones por Departamento",
-    geo=dict(
-        showland=True,  # Mostrar la tierra
-        landcolor="lightgray",
-        subunitcolor="white",  # Color de los límites subnacionales
-    ),
-    margin={"r": 0, "t": 0, "l": 0, "b": 0}  # Ajuste de márgenes
-)
+        st.plotly_chart(fig, use_container_width=True)
+    """
 
-    # Mostrar el gráfico
-    st.plotly_chart(ig, use_container_width=True)
-
-    # Agregar botón de descarga para el DataFrame agrupado
-    buffer = io.BytesIO()
-    # Convertir inscriptos_por_depto a CSV con codificación utf-8-sig
-    inscriptos_por_depto.to_csv(buffer, index=False, encoding='utf-8-sig')
-    buffer.seek(0)
-
-    st.download_button(
-        label="Descargar Inscriptos por Departamento como CSV",
-        data=buffer,
-        file_name='inscriptos_por_depto.csv',
-        mime='text/csv'
-    )
 
     ########### EMPLEO +26 ##############
     
@@ -394,29 +445,6 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
     
-    # Buzón de mensajes y valoración del reporte
-    st.sidebar.header("📝 Buzón de Mensajes")
-    st.sidebar.caption("Dirección de Tecnología y Análisis de Datos")
-
-    # Área de texto para comentarios
-    comentario = st.sidebar.text_area("Para poder ofrecerte los mejores reportes posibles, tu opinión es muy valiosa. Nos encantaría recibir tus comentarios sobre el reporte y saber en qué aspectos podemos mejorarlo. ¡Muchas gracias por ayudarnos a crecer y mejorar!", "", height=100)
-
-    # Selector de valoración
-    valoracion = st.sidebar.selectbox("Valora el reporte:", [1, 2, 3, 4, 5])
-
-    # Botón para enviar el mensaje
-    if st.sidebar.button("Enviar"):
-        if comentario:
-            # Intentar enviar a Slack
-            if enviar_a_slack(comentario, valoracion):
-                st.sidebar.success("✅ Gracias por tu comentario! El mensaje ha sido enviado.")
-                st.sidebar.write(f"**Comentario:** {comentario}")
-                st.sidebar.write(f"**Valoración:** {valoracion} estrellas")
-            else:
-                st.sidebar.error("❌ Hubo un error al enviar el mensaje a Slack.")
-        else:
-            st.sidebar.warning("⚠️ Por favor, escribe un comentario antes de enviar.")
-
     # Calcular edades en inscripciones
     fecha_actual = pd.Timestamp(datetime.now())
 
@@ -532,40 +560,3 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         )
 """
  
-    
-    with st.sidebar:
-        # Agregar un separador visual
-        st.markdown("---")
-
-        # Título de la sección de descarga
-        st.markdown("### 📥 Descarga de Bases")
-
-        # Preparar el DataFrame para la descarga
-        col_inscripcion = ['ID_FICHA', 'APELLIDO', 'NOMBRE', 'CUIL', 'N_ESTADO_FICHA', 'IDETAPA', 
-                           'NUMERO_DOCUMENTO', 'FER_NAC', 'EDAD', 'SEXO', 'FEC_SIST', 'CALLE', 
-                           'NUMERO', 'BARRIO', 'N_LOCALIDAD', 'N_DEPARTAMENTO', 'TEL_FIJO', 
-                           'TEL_CELULAR', 'CONTACTO', 'MAIL', 'ES_DISCAPACITADO', 'CERTIF_DISCAP', 
-                           'FEC_SIST', 'MODALIDAD', 'TAREAS', 'ALTA_TEMPRANA', 'ID_MOD_CONT_AFIP', 
-                           'MOD_CONT_AFIP', 'FEC_MODIF', 'RAZON_SOCIAL', 'EMP_CUIT', 'CANT_EMP', 
-                           'EMP_CALLE', 'EMP_NUMERO', 'EMP_N_LOCALIDAD', 'EMP_N_DEPARTAMENTO', 
-                           'EMP_CELULAR', 'EMP_MAIL', 'EMP_ES_COOPERATIVA', 'EU_NOMBRE', 
-                           'EMP_APELLIDO', 'EU_MAIL', 'EU_TELEFONO']
-
-        # Filtrar df_inscriptos por los estados de ficha requeridos antes de seleccionar las columnas
-        estados_validos = [8, 3, 12, 13, 14]
-        df_i = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin(estados_validos)][col_inscripcion]
-        
-        # Preparar el buffer para el archivo Excel
-        buffer2 = io.BytesIO()
-        with pd.ExcelWriter(buffer2, engine='openpyxl') as writer:
-            df_i.to_excel(writer, index=False, sheet_name='Union PPP y Empleo+26')
-        buffer2.seek(0)
-
-        # Botón de descarga con estilo
-        st.download_button(
-            label="📊 Descargar PPP y Empleo+26",
-            data=buffer2,
-            file_name='reporte_ppp_empleo26.xlsx',
-            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            help="Descarga el reporte completo de PPP y Empleo+26 en formato Excel"
-        )
