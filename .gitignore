@@ -4,3 +4,4 @@ venv/
 run_streamlit.sh
 .vscode
 .devcontainer
+__pycache__
