@@ -62,6 +62,8 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_match_ppp = df_cuil_unicos.merge(df_match_ppp, on='CUIL', how='inner')
 
     # Agregar información a la pestaña inscripciones
+    st.info("🚀Se Encontró una solución para superar el inconveniente de la actualización automática.")
+    st.info("📝Se añadió el porcentaje de presentación de Curriculum Vitae")
     st.info("⭐FIN DE INSCRIPCION PPP: Tanto FUP como Matchs quedaron con inscripciones cerradas")
 
 
