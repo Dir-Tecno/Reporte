@@ -60,6 +60,7 @@ if df is not None:
     
     with tab1:
         try:
+            
             show_inscriptions(df[8], df[1], df[2], df[4], df[3], file_dates[7])
         except Exception as e:
             st.error(f"Error al mostrar inscripciones: {str(e)}")

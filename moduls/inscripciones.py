@@ -49,13 +49,17 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     if df_postulaciones_fup.empty or df_inscripciones.empty or df_inscriptos.empty or df_poblacion.empty:
         st.error("Uno o más DataFrames están vacíos. Verifica la carga de datos.")
         return
-
+    df_inscriptos['CUIL'] = df_inscriptos['CUIL'].str.replace("-", "", regex=False)
     # Filtrar los DataFrames según sea necesario
     df_inscriptos_ppp = df_inscriptos[df_inscriptos['IDETAPA'] == 53]
     df_match_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 8]
     df_cti_inscripto_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 12]
     df_cti_validos_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 13]
     df_cti_benficiario_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 14]
+    
+    # Realizar inner join entre CUIL únicos de df_postulaciones_fup y df_match_ppp
+    df_cuil_unicos = df_postulaciones_fup[['CUIL', 'ID_DOCUMENTO_CV']].drop_duplicates()
+    df_match_ppp = df_cuil_unicos.merge(df_match_ppp, on='CUIL', how='inner')
 
     # Agregar información a la pestaña inscripciones
     st.info("⭐FIN DE INSCRIPCION PPP: Tanto FUP como Matchs quedaron con inscripciones cerradas")
@@ -101,7 +105,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
                            'EMP_APELLIDO', 'EU_MAIL', 'EU_TELEFONO']
 
         # Filtrar df_inscriptos por los estados de ficha requeridos antes de seleccionar las columnas
-        estados_validos = [8, 3, 12, 13, 14]
+        estados_validos = [8, 3, 12, 13, 14, 17,18,19]
         df_i = df_inscriptos[df_inscriptos['ID_EST_FIC'].isin(estados_validos)][col_inscripcion]
         
         # Preparar el buffer para el archivo Excel
@@ -125,10 +129,21 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     file_date_inscripciones = file_date_inscripciones - timedelta(hours=3)
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
 
-    total_postulantes_ppp = df_postulaciones_fup['CUIL'].nunique()
     total_match_ppp = df_match_ppp['CUIL'].shape[0]
+
+
+    total_postulantes_ppp = df_postulaciones_fup['CUIL'].nunique()
+    total_cv_post_ppp_unicos = df_postulaciones_fup['ID_DOCUMENTO_CV'].nunique()
     total_match_ppp_unicos = df_match_ppp['CUIL'].nunique()
+    total_cv_match_ppp_unicos = df_match_ppp['ID_DOCUMENTO_CV'].nunique()
+     # Calcular porcentajes
+    porcentaje_cv_post_ppp = (total_cv_post_ppp_unicos / total_postulantes_ppp * 100) if total_postulantes_ppp > 0 else 0
+    porcentaje_cv_match_ppp = (total_cv_match_ppp_unicos / total_match_ppp_unicos * 100) if total_match_ppp_unicos > 0 else 0
+
+
     total_empresas_match_ppp = df_match_ppp['ID_EMP'].nunique()
+
+
 
 
 
@@ -178,7 +193,10 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             <div style="background-color:#d6efd6;padding:10px;border-radius:5px;">
                 <strong>Total Match PPP</strong><br>
                 <span style="font-size:24px;">{total_match_ppp}</span></br>
-                <span style="font-size:12px;">EMPRESAS UNICAS {total_empresas_match_ppp}</span>
+                <div style="margin-top:10px;">
+                    <strong>Empresas únicas:</strong>
+                    <span style="font-size:18px;color:green;">{total_empresas_match_ppp}</span><br>
+                </div>
             </div>
             """, 
             unsafe_allow_html=True
@@ -189,6 +207,11 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             <div style="background-color:#ffecd2;padding:10px;border-radius:5px;">
                 <strong>Total Match de Personas Únicas PPP</strong><br>
                 <span style="font-size:24px;">{total_match_ppp_unicos}</span>
+                <div style="margin-top:10px;">
+                    <strong>Presenta CV:</strong>
+                    <span style="font-size:18px;color:green;">{porcentaje_cv_match_ppp:.2f}%</span><br>
+                </div>
+
             </div>
             """, 
             unsafe_allow_html=True
