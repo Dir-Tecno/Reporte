@@ -51,9 +51,9 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         return
     df_inscriptos['CUIL'] = df_inscriptos['CUIL'].str.replace("-", "", regex=False)
     # Filtrar los DataFrames según sea necesario
-    df_inscriptos_ppp = df_inscriptos[df_inscriptos['IDETAPA'] == 53]
-    df_match_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 8]
-    df_cti_inscripto_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 12]
+    df_inscriptos_ppp = df_inscriptos[df_inscriptos['IDETAPA'] == 53]    
+    df_match_ppp = df_inscriptos_ppp[(df_inscriptos_ppp['ID_EST_FIC'] == 8)]
+    df_cti_inscripto_ppp = df_inscriptos_ppp[(df_inscriptos_ppp['ID_EST_FIC'] == 12) & (df_inscriptos_ppp['ID_EMP'].notnull())]
     df_cti_validos_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 13]
     df_cti_benficiario_ppp = df_inscriptos_ppp[df_inscriptos_ppp['ID_EST_FIC'] == 14]
     
@@ -62,9 +62,9 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_match_ppp = df_cuil_unicos.merge(df_match_ppp, on='CUIL', how='inner')
 
     # Agregar información a la pestaña inscripciones
+    st.info("⭐Se añadieron los Estados post evaluaciones de empleo")
     st.info("🚀Se Encontró una solución para superar el inconveniente de la actualización automática.")
     st.info("📝Se añadió el porcentaje de presentación de Curriculum Vitae")
-    st.info("⭐FIN DE INSCRIPCION PPP: Tanto FUP como Matchs quedaron con inscripciones cerradas")
 
 
 
@@ -126,7 +126,6 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         )
 
     # REPORTE PPP
-    st.markdown("### Programa Primer Paso")
     file_date_inscripciones = pd.to_datetime(file_date)
     file_date_inscripciones = file_date_inscripciones - timedelta(hours=3)
     st.write(f"Datos actualizados al: {file_date_inscripciones.strftime('%d/%m/%Y %H:%M:%S')}")
@@ -135,15 +134,22 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
 
 
     total_postulantes_ppp = df_postulaciones_fup['CUIL'].nunique()
-    total_cv_post_ppp_unicos = df_postulaciones_fup['ID_DOCUMENTO_CV'].nunique()
-    total_match_ppp_unicos = df_match_ppp['CUIL'].nunique()
-    total_cv_match_ppp_unicos = df_match_ppp['ID_DOCUMENTO_CV'].nunique()
-     # Calcular porcentajes
-    porcentaje_cv_post_ppp = (total_cv_post_ppp_unicos / total_postulantes_ppp * 100) if total_postulantes_ppp > 0 else 0
+    total_match_ppp_unicos = df_match_ppp[df_match_ppp['ID_EMP'].notnull()]['CUIL'].nunique()
+    total_cv_match_ppp_unicos = df_match_ppp[df_match_ppp['ID_EMP'].notnull()]['ID_DOCUMENTO_CV'].nunique()     # Calcular porcentajes
     porcentaje_cv_match_ppp = (total_cv_match_ppp_unicos / total_match_ppp_unicos * 100) if total_match_ppp_unicos > 0 else 0
 
 
     total_empresas_match_ppp = df_match_ppp['ID_EMP'].nunique()
+    
+    conteo_estados = df_inscriptos_ppp['ID_EST_FIC'].value_counts()
+
+    total_empresa_no_apta = conteo_estados.get(2, 0)  
+    total_rechazos = conteo_estados.get(4, 0)         
+    total_fuera_cupo_empresa = conteo_estados.get(5, 0)  
+    total_benef_ppp = conteo_estados.get(3, 0)
+    
+    total_repesca_ppp = df_match_ppp['ID_EMP'].isnull().sum()
+
 
 
 
@@ -174,9 +180,9 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         porcentaje_parcial = 0
 
 
-#Columnas con tarjetas de información
+    st.markdown("### Programa Primer Paso")
     
-    col1, col2, col3  = st.columns(3)
+    col1, col2  = st.columns(2)
 
         
     with col1:
@@ -192,20 +198,6 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     with col2:
         st.markdown(
             f"""
-            <div style="background-color:#d6efd6;padding:10px;border-radius:5px;">
-                <strong>Total Match PPP</strong><br>
-                <span style="font-size:24px;">{total_match_ppp}</span></br>
-                <div style="margin-top:10px;">
-                    <strong>Empresas únicas:</strong>
-                    <span style="font-size:18px;color:green;">{total_empresas_match_ppp}</span><br>
-                </div>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-    with col3:
-        st.markdown(
-            f"""
             <div style="background-color:#ffecd2;padding:10px;border-radius:5px;">
                 <strong>Total Match de Personas Únicas PPP</strong><br>
                 <span style="font-size:24px;">{total_match_ppp_unicos}</span>
@@ -218,6 +210,70 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             """, 
             unsafe_allow_html=True
         )
+    
+    st.markdown("#### Estados post evaluación de Empleo")
+
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+    # Mostrar los totales de estados
+
+    with col1:
+    
+        st.markdown(
+            f"""
+            <div style="background-color:#ffcccb;padding:10px;border-radius:5px;">
+                <strong>Inscripciones Rechazadas</strong><br>
+                <span style="font-size:24px;">{total_rechazos}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+
+    with col2:
+
+        st.markdown(
+            f"""
+            <div style="background-color:#ffebcd;padding:10px;border-radius:5px;">
+                <strong>Inscripciones con Empresas No Aptas</strong><br>
+                <span style="font-size:24px;">{total_empresa_no_apta}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+
+    with col3:
+
+        st.markdown(
+            f"""
+            <div style="background-color:#ffe4e1;padding:10px;border-radius:5px;">
+                <strong>Fuera de Cupo de Empresa</strong><br>
+                <span style="font-size:24px;">{total_fuera_cupo_empresa}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    
+    with col4:
+        st.markdown(
+            f"""
+            <div style="background-color:#d0e3f1;padding:10px;border-radius:5px;">
+                <strong>Postulantes APTOS PPP (repesca)</strong><br>
+                <span style="font-size:24px;">{total_repesca_ppp}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    with col5:
+        st.markdown(
+            f"""
+            <div style="background-color:#d1e7dd;padding:10px;border-radius:5px;">
+                <strong>Beneficiarios PPP</strong><br>
+                <span style="font-size:24px;">{total_benef_ppp}</span>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+        #
     
     st.markdown("#### PPP-cti")
 
@@ -233,22 +289,22 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             """, 
             unsafe_allow_html=True
         )
-        with col2:
-            st.markdown(
-            f"""
-            <div style="background-color:#d0e3f1;padding:10px;border-radius:5px;">
-                <strong>CTI Validados PPP</strong><br>
-                <span style="font-size:24px;">{df_cti_validos_ppp['CUIL'].nunique()}</span><br>
-                <div style="margin-top:10px;">
-                    <strong>Modalidad Completo:</strong>
-                    <span style="font-size:18px;color:green;">{porcentaje_completo:.2f}%</span><br>
-                    <strong>Modalidad Parcial:</strong>
-                    <span style="font-size:18px;color:yellow;">{porcentaje_parcial:.2f}%</span>
-                </div>
+    with col2:
+        st.markdown(
+        f"""
+        <div style="background-color:#d0e3f1;padding:10px;border-radius:5px;">
+            <strong>CTI Validados PPP</strong><br>
+            <span style="font-size:24px;">{df_cti_validos_ppp['CUIL'].nunique()}</span><br>
+            <div style="margin-top:10px;">
+                <strong>Modalidad Completo:</strong>
+                <span style="font-size:18px;color:green;">{porcentaje_completo:.2f}%</span><br>
+                <strong>Modalidad Parcial:</strong>
+                <span style="font-size:18px;color:yellow;">{porcentaje_parcial:.2f}%</span>
             </div>
-            """, 
-            unsafe_allow_html=True
-        )
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
 
     with col3:
         st.markdown(
@@ -260,6 +316,8 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             """, 
             unsafe_allow_html=True
         )
+
+
 
 
     # Crear las dos columnas
