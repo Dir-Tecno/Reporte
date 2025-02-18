@@ -62,9 +62,9 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_match_ppp = df_cuil_unicos.merge(df_match_ppp, on='CUIL', how='inner')
 
     # Agregar información a la pestaña inscripciones
+    st.info("📝Se añadió tabla con estados  de fichas agrupados  por estados de  beneficiario")
     st.info("⭐Se añadieron los Estados post evaluaciones de empleo")
     st.info("🚀Se Encontró una solución para superar el inconveniente de la actualización automática.")
-    st.info("📝Se añadió el porcentaje de presentación de Curriculum Vitae")
 
 
 
@@ -96,7 +96,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         st.markdown("### 📥 Descarga de Bases")
 
         # Preparar el DataFrame para la descarga
-        col_inscripcion = ['ID_FICHA', 'APELLIDO', 'NOMBRE', 'CUIL', 'N_ESTADO_FICHA', 'IDETAPA', 
+        col_inscripcion = ['ID_FICHA', 'APELLIDO', 'NOMBRE', 'CUIL', 'N_ESTADO_FICHA','BEN_N_ESTADO', 'IDETAPA', 
                            'NUMERO_DOCUMENTO', 'FER_NAC', 'EDAD', 'SEXO', 'FEC_SIST', 'CALLE', 
                            'NUMERO', 'BARRIO', 'N_LOCALIDAD', 'N_DEPARTAMENTO', 'TEL_FIJO', 
                            'TEL_CELULAR', 'CONTACTO', 'MAIL', 'ES_DISCAPACITADO', 'CERTIF_DISCAP', 
@@ -374,16 +374,7 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
         # Mostrar el gráfico en Streamlit
         st.plotly_chart(fig)
 
-    # Filtrar el DataFrame con solo los campos necesarios
-    df_filtrado_torta = df_postulaciones_fup_unicos[['CUIL', 'Edad', 'EDUCACION']]
 
-    # Agregar botón de descarga para el DataFrame filtrado
-    st.download_button(
-        label="Descargar Datos de Postulantes",
-        data=df_filtrado_torta.to_csv(index=False),  # Convertir a CSV
-        file_name='datos_POSTULANTES.csv',  # Nombre del archivo
-        mime='text/csv'  # Tipo MIME para CSV
-    )
 
     ##### PPP POR DEPARTAMENTEO ##########
 
@@ -628,18 +619,49 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
             """, 
             unsafe_allow_html=True
         )
-        """
-    with col2:
+    with col3:
         st.markdown(
-            f""
+            f"""
             <div style="background-color:rgb(104 185 75);padding:10px;border-radius:5px;">
                 <strong>Beneficiarios "Repesca"</strong><br>
                 <span style="font-size:24px;">{total_postulantes_repesca}</span><br>
                 <span style="font-size:12px;line-height:1;">Número de postulantes que quedaron "Fuera de Cupo de Empresa",</span><br>
                 <span style="font-size:12px;line-height:1;">que fueron tomados por otras empresas.</span>
             </div>
-            "", 
+            """, 
             unsafe_allow_html=True
         )
-"""
- 
+
+     # SECCIÓN FINAL - TABLA DE ESTADOS POR FICHA
+    st.markdown("---")
+    st.markdown("### 📋 Tabla de Estados por Ficha")
+    
+    # Verificar existencia de columnas y datos
+    if all(col in df_inscriptos.columns for col in ['ID_FICHA', 'N_ESTADO_FICHA', 'BEN_N_ESTADO']):
+        # Crear DataFrame con los datos necesarios
+        fichas_estados = df_inscriptos[['ID_FICHA', 'N_ESTADO_FICHA', 'BEN_N_ESTADO']].copy()
+        fichas_estados.columns = ['ID Ficha', 'Estado Ficha', 'Estado Beneficiario']
+        
+        # Mostrar tabla agrupada
+        if not fichas_estados.empty:
+            grouped = fichas_estados.groupby(['Estado Ficha', 'Estado Beneficiario']).size().reset_index(name='Cantidad')
+            st.dataframe(
+                grouped.sort_values('Cantidad', ascending=False),
+                use_container_width=True,
+                height=400,
+                hide_index=True
+            )
+            
+            # Botón de descarga
+            csv = fichas_estados.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="⬇️ Descargar Datos Completos",
+                data=csv,
+                file_name='estados_fichas.csv',
+                mime='text/csv'
+            )
+        else:
+            st.warning("No hay datos disponibles para mostrar la tabla de estados")
+    else:
+        st.error("""Columnas requeridas no encontradas en los datos. 
+               Verifica que existan las columnas: ID_FICHA, N_ESTADO_FICHA y N_BEN_ESTADO""")
