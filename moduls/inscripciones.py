@@ -62,9 +62,10 @@ def show_inscriptions(df_postulaciones_fup, df_inscripciones, df_inscriptos, df_
     df_match_ppp = df_cuil_unicos.merge(df_match_ppp, on='CUIL', how='inner')
 
     # Agregar información a la pestaña inscripciones
+    st.info("⭐Se añadieron columnas con cruce ARCA")
+    st.info("🚀Se añadió tabla y grafico sobre detalle  de  la  demanda")
     st.info("📝Se añadió tabla con estados  de fichas agrupados  por estados de  beneficiario")
-    st.info("⭐Se añadieron los Estados post evaluaciones de empleo")
-    st.info("🚀Se Encontró una solución para superar el inconveniente de la actualización automática.")
+    
 
 
 

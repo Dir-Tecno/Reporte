@@ -49,12 +49,16 @@ def show_companies(df_empresas, geojson_data):
     df_empresas['VACANTES'] = pd.to_numeric(df_empresas['VACANTES'], errors='coerce')
     df_empresas['VACANTES'] = df_empresas['VACANTES'].fillna(0)
 
+
+
     # Calcular la columna 'CUPO'
     df_empresas['CUPO'] = df_empresas.apply(lambda row: calculate_cupo(row['CANTIDAD_EMPLEADOS'], row['EMPLEADOR'], row['ADHERIDO']), axis=1)
 
     # Filtrar por CUIT único y eliminar duplicados
-    df_display = df_empresas[['N_LOCALIDAD','N_DEPARTAMENTO', 'CUIT', 'N_EMPRESA', 'NOMBRE_TIPO_EMPRESA','ADHERIDO','CANTIDAD_EMPLEADOS', 'VACANTES', 'CUPO']].drop_duplicates(subset='CUIT')
+    df_display = df_empresas[['N_LOCALIDAD','N_DEPARTAMENTO', 'CUIT', 'N_EMPRESA', 'NOMBRE_TIPO_EMPRESA','ADHERIDO','CANTIDAD_EMPLEADOS', 'VACANTES', 'CUPO','IMP_GANANCIAS','IMP_IVA','MONOTRIBUTO','INTEGRANTE_SOC','EMPLEADOR','ACTIVIDAD_MONOTRIBUTO']].drop_duplicates(subset='CUIT')
     df_display = df_display.sort_values(by='CUPO', ascending=False).reset_index(drop=True)
+
+
 
     # Filtrar empresas adheridas al PPP 2024
     df_empresas_puestos = df_empresas[df_empresas['ADHERIDO'] == 'PPP - PROGRAMA PRIMER PASO [2024]'].copy()
@@ -103,4 +107,62 @@ def show_companies(df_empresas, geojson_data):
         st.markdown("""<div style='padding: 15px; border-radius: 5px; border: 1px solid #e0e0e0; background-color: #f8f9fa;margin-top: 10px; font-size: 0.9em;color: #505050;'>Las empresas en esta tabla se encuentran adheridas a uno o más programas de empleo, han cumplido con los requisitos establecidos y han proporcionado sus datos a través de los registros de programasempleo.cba.gov.ar</div>""", unsafe_allow_html=True)
 
     # Mostrar el DataFrame sin formato especial
-    st.dataframe(df_display, hide_index=True)  
+    st.dataframe(df_display, hide_index=True) 
+
+    
+    st.markdown("<hr style='border: 1px solid #e0e0e0; margin: 20px 0;'>", unsafe_allow_html=True)
+
+ # --- Nuevo apartado: Perfil de Demanda ---
+    st.markdown("## Perfil de Demanda")
+
+    # Filtrar solo los datos que tengan información de puesto y categoría
+    df_perfil_demanda = df_empresas.dropna(subset=['N_EMPRESA','CUIT', 'N_PUESTO_EMPLEO', 'N_CATEGORIA_EMPLEO'])
+
+    if df_perfil_demanda.empty:
+        st.warning("No hay datos disponibles de perfil de demanda.")
+    else:
+        # Crear las dos columnas
+        col1, col2 = st.columns(2) # Cambio
+
+        # --- Visualización 1: Tabla Agrupada (en col1) ---
+        with col1: # Cambio
+            st.subheader("Puestos y Categorías Demandadas por Empresa")
+            # Agrupar por empresa, puesto y categoría, sin columna de cantidad
+            df_grouped = df_perfil_demanda.groupby(['N_EMPRESA','CUIT','N_PUESTO_EMPLEO', 'N_CATEGORIA_EMPLEO']).size().reset_index()
+            # Eliminar la columna "0" que se crea
+            df_grouped = df_grouped.drop(columns=[0])
+            st.dataframe(df_grouped, hide_index=True)
+
+       # --- Visualización 2: Gráfico de Barras por Categoría (Top 10) (en col2) ---
+        with col2:
+            st.subheader("Top 10 - Distribución de Categorías de Empleo")
+
+            # Agrupar por categoría y contar las ocurrencias
+            df_cat_count = df_perfil_demanda.groupby('N_CATEGORIA_EMPLEO')['CUIT'].nunique().reset_index(name='Empresas que Buscan')
+            df_cat_count = df_cat_count.sort_values(by='Empresas que Buscan', ascending=False)
+            #tomar el top 10
+            df_cat_count_top_10 = df_cat_count.head(10)
+
+            # Crear gráfico de barras
+            chart_cat = alt.Chart(df_cat_count_top_10).mark_bar().encode(
+                x=alt.X('Empresas que Buscan', title=''),  # Se elimina el título del eje X
+                y=alt.Y('N_CATEGORIA_EMPLEO', sort='-x', title='Categoría de Empleo'),
+                tooltip=['N_CATEGORIA_EMPLEO', 'Empresas que Buscan'],
+                text=alt.Text('Empresas que Buscan', format=',d') # Se añade el label
+            ).properties(
+                width=600,
+                height=400
+            )
+
+             # Agregar las labels al gráfico
+            text = chart_cat.mark_text(
+                align='left',
+                baseline='middle',
+                dx=3  # desplazar los labels del grafico
+            ).encode(
+                text='Empresas que Buscan'
+            )
+
+             #unir el grafico y los labels
+            st.altair_chart(chart_cat + text, use_container_width=True)
+
